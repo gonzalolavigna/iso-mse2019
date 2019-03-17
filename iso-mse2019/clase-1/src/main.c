@@ -1,5 +1,6 @@
 #include "main.h"         // <= Su propia cabecera
 #include "board.h"
+#include "sapi.h"
 #include "string.h"
 
 #define STACK_SIZE_B 512
@@ -16,14 +17,28 @@ uint32_t current_task;
 
 
 void * task1 (void * arg){
+	uint32_t tick_count = 250;
 	while(1){
+		if(tick_count == 0){
+			tick_count = 250;
+			gpioToggle(LED1);
+		}
+		else
+			tick_count--;
 		__WFI();
 	}
 	return NULL;
 }
 
 void * task2 (void * arg){
+	uint32_t tick_count = 500;
 	while(1){
+		if(tick_count == 0){
+			tick_count = 500;
+			gpioToggle(LED2);
+		}
+		else
+			tick_count--;
 		__WFI();
 	}
 	return NULL;
@@ -54,6 +69,7 @@ uint32_t get_next_context (uint32_t current_sp){
 		while(1){
 			__WFI();
 		}
+		break;
 	}
 	return next_sp;
 }
@@ -76,10 +92,9 @@ void init_stack (	uint32_t stack[],
 	stack[stack_byte_size/4-2] = (uint32_t) entry_point; 			/*PC*/
 	stack[stack_byte_size/4-3] = (uint32_t) task_return_hook;		/*LR*/
 	stack[stack_byte_size/4-8] = (uint32_t) arg; 					/*R0*/
-	//stack[stack_byte_size/4-9] = 0xFFFFFFF9;			/**/
+	stack[stack_byte_size/4-9] = 0xFFFFFFF9;			/*LR IRQ*/
 
-	//*sp =(uint32_t) &(stack[stack_byte_size/4-17]); //Corri el stack point 8 lugares hacia donde crece la pila
-	*sp =(uint32_t) &(stack[stack_byte_size/4-16]); //Corri el stack point 8 lugares hacia donde crece la pila
+	*sp =(uint32_t) &(stack[stack_byte_size/4-17]); //Corri el stack point 8 lugares hacia donde crece la pila
 }
 
 
@@ -93,7 +108,10 @@ int main (void){
 	init_stack(stack_1,STACK_SIZE_B,&stack_1_pointer,task1, (void *)0x11223344);
 	init_stack(stack_2,STACK_SIZE_B,&stack_2_pointer,task2, (void *)0x11223344);
 
-	Board_Init();
+	//Board_Init();
+	//SystemCoreClockUpdate();
+	//SysTick_Config(SystemCoreClock / 1000);
+	boardConfig();
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock / 1000);
 
