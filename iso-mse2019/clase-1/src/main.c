@@ -86,13 +86,13 @@ uint32_t get_next_context(uint32_t current_sp) {
 		break;
 	case TASK2:
 		stack_2_pointer = current_sp;
-		if(task1_state == RUNNING){
+		if (task1_state == RUNNING) {
 			next_sp = stack_1_pointer;
 			current_task = TASK1;
-		}else if (task2_state == RUNNING) {
+		} else if (task2_state == RUNNING) {
 			next_sp = stack_2_pointer;
 			current_task = TASK2;
-		}else {
+		} else {
 			next_sp = stack_idle_pointer;
 			current_task = IDLE_TASK;
 		}
@@ -151,7 +151,7 @@ void * task2(void * arg) {
 }
 
 void init_stack(uint32_t stack[], uint32_t stack_byte_size, uint32_t *sp,
-		task_type entry_point, void * arg) {
+    task_type entry_point, void * arg) {
 
 	bzero(stack, stack_byte_size);
 
@@ -168,11 +168,11 @@ int main(void) {
 
 	// Inicializar y configurar la plataforma
 	init_stack(stack_1, STACK_SIZE_B, &stack_1_pointer, task1,
-			(void *) 0x11223344);
+	    (void *) 0x11223344);
 	init_stack(stack_2, STACK_SIZE_B, &stack_2_pointer, task2,
-			(void *) 0x11223344);
+	    (void *) 0x11223344);
 	init_stack(stack_idle, STACK_SIZE_B, &stack_idle_pointer, idle_task,
-			(void *) 0x11223344);
+	    (void *) 0x11223344);
 
 	task1_state = RUNNING;
 	task2_state = RUNNING;
