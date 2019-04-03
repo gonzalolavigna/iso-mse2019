@@ -135,7 +135,7 @@ void os_error_hook (void){
 
 uint32_t get_next_context(uint32_t current_sp){
 	uint8_t 	i;
-	bool_t 	  task_hit = FALSE;
+	bool_t 	  	task_hit = FALSE;
 	uint32_t 	next_stack_pointer;
 	uint32_t 	task_index;
 
@@ -171,12 +171,14 @@ uint32_t get_next_context(uint32_t current_sp){
 		}
 		break;
 	case OS_RUNNING_TASK:
-		//Asigno a la tarea que sea esta ejecutando el valor del stack actual
-		//por si hay que saltar a otra tarea.
+		//Siempre guardo el stack
 		task_list[running_task_index].stack_pointer = current_sp;
-		task_list[running_task_index].state = TASK_READY;
+		//Si la tarea esta corriendo pasa a running
+		if(task_list[running_task_index].state == TASK_RUNNING){
+			task_list[running_task_index].state = TASK_READY;
+		}
 		for(i= 0; i < task_count; task_count){
-			task_index = ((i+1)%task_count);
+			task_index = ((i+1+running_task_index)%task_count);
 			switch(task_list[task_index].state){
 			case TASK_RUNNING:
 				task_list[task_index].state = TASK_READY;
@@ -194,6 +196,7 @@ uint32_t get_next_context(uint32_t current_sp){
 			if(task_hit == TRUE){
 				os_state = OS_RUNNING_TASK;
 				next_stack_pointer = task_list[task_index].stack_pointer;
+				running_task_index = task_index;
 				//Si lo encontre no lo tengo que seguir buscando.
 				break;
 			}
@@ -224,6 +227,7 @@ uint32_t get_next_context(uint32_t current_sp){
 			if(task_hit == TRUE){
 				os_state = OS_RUNNING_TASK;
 				next_stack_pointer = task_list[task_index].stack_pointer;
+				running_task_index = task_index;
 				//Si lo encontre no lo tengo que seguir buscando.
 				break;
 			}
