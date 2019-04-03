@@ -20,4 +20,4 @@
 # Project path
 PROJECT_PATH = iso-mse2019
 # Project name
-PROJECT_NAME = clase-4
+PROJECT_NAME = modularizado

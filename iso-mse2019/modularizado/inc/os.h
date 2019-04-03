@@ -36,12 +36,12 @@ typedef enum {
 /*Datos para poder tener la informacion de la tarea actual.*/
 typedef struct  {
 	task_state_t 		state;
-	uint32_t*				stack_pointer;
-	uint32_t 				task_index;
-	uint32_t 				reamaining_ticks;
-	task_priority_t	priority;
-	uint32_t*				initial_stack_pointer;
-	uint32_t 				stack_size_bytes;
+	uint32_t			stack_pointer;
+	uint32_t			task_index;
+	uint32_t			reamaining_ticks;
+	task_priority_t		priority;
+	uint32_t*			initial_stack_pointer;
+	uint32_t 			stack_size_bytes;
 }task_context_t;
 
 
@@ -52,6 +52,8 @@ bool_t os_task_create	(	uint32_t stack[],uint32_t stack_size_bytes,task_type_f e
 							task_priority_t priority, void * arg );
 
 bool_t os_task_delay	(uint32_t ticks);
+
+uint32_t 	get_next_context	(	uint32_t current_sp);
 
 
 /*==================[c++]====================================================*/
