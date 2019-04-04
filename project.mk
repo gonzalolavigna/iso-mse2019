@@ -20,4 +20,4 @@
 # Project path
 PROJECT_PATH = iso-mse2019
 # Project name
-PROJECT_NAME = modularizado
+PROJECT_NAME = colas
