@@ -9,9 +9,11 @@ uint32_t task2_stack[TASK2_STACK_SIZE_BYTES/4];
 
 void* task2 (void* a){
 	uint32_t i;
+	gpioInit(GPIO1,GPIO_OUTPUT);
 	while(1){
 		os_task_delay(10);
 		gpioToggle(LED2);
+		gpioToggle(GPIO1);
 	}
 }
 

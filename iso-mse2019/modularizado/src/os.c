@@ -111,6 +111,10 @@ bool_t os_init(void){
 						idle_task,
 						(void *) 0x99999999);
 
+	/*GPIO 3 -> GET NEXT CONTEXT GPIO 4 -> SYSTICK*/
+	gpioInit(GPIO3,GPIO_OUTPUT);
+	gpioInit(GPIO4,GPIO_OUTPUT);
+
 	return TRUE;
 }
 
@@ -138,7 +142,7 @@ uint32_t get_next_context(uint32_t current_sp){
 	bool_t 	  	task_hit = FALSE;
 	uint32_t 	next_stack_pointer;
 	uint32_t 	task_index;
-
+	gpioToggle(GPIO3);
 	switch (os_state){
 	case OS_INIT:
 		for(i=0; i < task_count;i++){
@@ -177,7 +181,7 @@ uint32_t get_next_context(uint32_t current_sp){
 		if(task_list[running_task_index].state == TASK_RUNNING){
 			task_list[running_task_index].state = TASK_READY;
 		}
-		for(i= 0; i < task_count; task_count){
+		for(i= 0; i < task_count; i++){
 			task_index = ((i+1+running_task_index)%task_count);
 			switch(task_list[task_index].state){
 			case TASK_RUNNING:
@@ -241,7 +245,7 @@ uint32_t get_next_context(uint32_t current_sp){
 		os_error_hook();
 		break;
 	}
-
+	gpioToggle(GPIO3);
 	return next_stack_pointer;
 }
 
@@ -252,8 +256,10 @@ void do_scheduler(void){
 }
 
 void SysTick_Handler (void){
+	gpioToggle(GPIO4);
 	//En el systick handler llamamos al scheduler haciendo la interrupcion de pendsv.
 	update_delay();
+	gpioToggle(GPIO4);
 	do_scheduler();
 }
 
