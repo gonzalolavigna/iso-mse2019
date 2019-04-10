@@ -134,6 +134,9 @@ uint32_t get_next_context(uint32_t current_sp) {
 	bool_t task_hit = FALSE;
 	uint32_t next_stack_pointer;
 	uint32_t task_index;
+
+	__disable_irq();
+
 	gpioToggle(GPIO3);
 	switch (os_state) {
 	case OS_INIT:
@@ -182,6 +185,7 @@ uint32_t get_next_context(uint32_t current_sp) {
 		break;
 	}
 	gpioToggle(GPIO3);
+	__enable_irq();
 	return next_stack_pointer;
 }
 

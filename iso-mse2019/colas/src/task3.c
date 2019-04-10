@@ -13,7 +13,7 @@ void* task3 (void* a){
 	gpioWrite(GPIO2,OFF);
 	while(1){
 
-		uartWriteString(UART_USB,"TASK 3 TESTING TASK 3 TASK 3\r\n");
+		uartWriteString(UART_USB,"TASK 3 TESTING TASK 3 TASK 3-FPU CONTEXT\r\n");
 		gpioWrite(GPIO2,ON);
 		os_task_delay(2000);
 		gpioWrite(GPIO2,OFF);
