@@ -18,6 +18,6 @@
 # ---------- Your paths: -----------------------------------------------
 
 # Project path
-PROJECT_PATH = iso-mse2019
+#PROJECT_PATH = iso-mse2019
 # Project name
-PROJECT_NAME = colas
+PROJECT_NAME = iso-mse2019
