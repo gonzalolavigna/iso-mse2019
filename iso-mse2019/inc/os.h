@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "sapi.h"
+#include "task_stack.h"
 
 /*==================[inclusiones]============================================*/
 /*==================[c++]====================================================*/
@@ -46,16 +47,22 @@ typedef struct  {
 
 
 /*==================[declaraciones de funciones externas]====================*/
-bool_t os_init 				(	void);
-bool_t os_task_create	(	uint32_t stack[],
-												uint32_t stack_size_bytes,
-												task_type_f entry_point,
-												task_priority_t priority,
-												void * arg );
-bool_t os_task_delay	(	uint32_t ticks);
-bool_t os_queue_init	(	void);
+bool_t 	os_init 				(	void);
+bool_t 	os_task_create	(	uint32_t stack[],
+													uint32_t stack_size_bytes,
+													task_type_f entry_point,
+													task_priority_t priority,
+													void * arg );
+bool_t 	os_queue_init		(	void);
+void 		do_scheduler		(	void);
+void 		os_error_hook		(	void);
 
 
+/*==================[declaracion datos a utilizarse externamente=============*/
+extern task_context_t task_list[];
+extern uint32_t 			running_task_index;
+extern uint32_t 			task_count;
+extern task_stack_t 	priority_queue[];
 
 /*==================[c++]====================================================*/
 #ifdef __cplusplus
