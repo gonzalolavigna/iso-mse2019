@@ -1,4 +1,5 @@
 #include "os.h"
+#include "os_delay.h"
 #include <stdint.h>
 #include "string.h"
 #include "sapi.h"
@@ -30,9 +31,7 @@ void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
     uint32_t *stack_pointer, task_type_f entry_point, void * arg);
 void* idle_task(void * arg);
 void os_error_hook(void);
-void do_scheduler(void);
 void task_return_hook(void * ret_val);
-void update_delay(void);
 bool_t search_next_task(uint32_t* task_index);
 
 /*Declaracion de funciones externas utilizadas por el SO*/
@@ -77,15 +76,6 @@ bool_t os_task_create(uint32_t stack[], uint32_t stack_size_bytes,
 	return TRUE;
 }
 
-bool_t os_task_delay(uint32_t ticks) {
-	if (ticks == 0) {
-		return TRUE;
-	}
-	task_list[running_task_index].state = TASK_SLEEPING;
-	task_list[running_task_index].reamaining_ticks = ticks;
-	do_scheduler();
-	return TRUE;
-}
 
 bool_t os_init(void) {
 	boardConfig();
@@ -130,14 +120,13 @@ void os_error_hook(void) {
 }
 
 uint32_t get_next_context(uint32_t current_sp) {
-	uint8_t i;
-	bool_t task_hit = FALSE;
-	uint32_t next_stack_pointer;
-	uint32_t task_index;
-
-	__disable_irq();
+	uint8_t 	i;
+	bool_t 		task_hit = FALSE;
+	uint32_t 	next_stack_pointer;
+	uint32_t 	task_index;
 
 	gpioToggle(GPIO3);
+	disable_sys_tick_irq();
 	switch (os_state) {
 	case OS_INIT:
 		task_hit = search_next_task(&task_index);
@@ -185,7 +174,7 @@ uint32_t get_next_context(uint32_t current_sp) {
 		break;
 	}
 	gpioToggle(GPIO3);
-	__enable_irq();
+	enable_sys_tick_irq();
 	return next_stack_pointer;
 }
 
@@ -229,35 +218,6 @@ void do_scheduler(void) {
 	__ISB();
 	__DSB();
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-}
-
-void SysTick_Handler(void) {
-	gpioToggle(GPIO4);
-//En el systick handler llamamos al scheduler haciendo la interrupcion de pendsv.
-	update_delay();
-	gpioToggle(GPIO4);
-	do_scheduler();
-}
-
-void update_delay(void) {
-	int i;
-	for (i = 0; i < task_count; i++) {
-		switch (task_list[i].state) {
-		case TASK_RUNNING:
-		case TASK_READY:
-			break;
-		case TASK_SLEEPING:
-			if ((--(task_list[i].reamaining_ticks)) == 0) {
-				//Pongo la tarea en ready y la pongo en la cola de prioridad que le corresponde
-				task_list[i].state = TASK_READY;
-				task_stack_push(&priority_queue[task_list[i].priority], i);
-			}
-			break;
-		default:
-			os_error_hook();
-			break;
-		}
-	}
 }
 
 void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
