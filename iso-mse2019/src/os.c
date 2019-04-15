@@ -5,8 +5,7 @@
 #include "sapi.h"
 #include "task_stack.h"
 
-//Numero maximo de las tareas permitidas por nuestro OS
-#define MAX_TASK_COUNT 10
+
 //Numero maximo de las colas de prioridades que admite nuestro OS
 //Obivamente tengo que sacar la definicion del idle.
 #define MAX_PRIORITY_QUEUE (sizeof(task_priority_t)-1)
@@ -62,6 +61,7 @@ bool_t os_task_create(uint32_t stack[], uint32_t stack_size_bytes,
 	task_list[task_count].initial_stack_pointer = stack;
 	task_list[task_count].stack_size_bytes = stack_size_bytes;
 	task_list[task_count].task_index = task_count;
+	task_list[task_count].event_waiting = FALSE;
 
 	//Inicializo el stack y ya queda actualizado el stack pointer al lugar donde tengo el stack
 	//para ejecutar la tarea
@@ -90,6 +90,8 @@ bool_t os_init(void) {
 	idle_contex.initial_stack_pointer = idle_task_stack;
 	idle_contex.stack_size_bytes = IDLE_TASK_SIZE_BYTES;
 	idle_contex.task_index = 0xFFFFFFFF;
+	//Por definicion la tarea idle no permite ningun evento
+	idle_contex.event_waiting = FALSE;
 	init_task_stack(idle_task_stack,
 	IDLE_TASK_SIZE_BYTES, &idle_contex.stack_pointer, idle_task,
 	    (void *) 0x99999999);
