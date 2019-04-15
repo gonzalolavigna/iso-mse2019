@@ -19,8 +19,7 @@ void os_event_init_array(void){
 
 os_event_handler_t 	os_event_init	(void){
 	os_event_handler_t event_handler;
-	//Si queremos crear un evento mas de lo que podemos directamente
-	//devolvemos NULL
+	//Si queremos crear un evento mas de lo que podemos directamente devolvemos NULL
 	if(event_count >= MAX_EVENT_COUNT ){
 		return NULL;
 	}
@@ -34,7 +33,7 @@ os_event_handler_t 	os_event_init	(void){
 }
 
 bool_t os_event_wait	(os_event_handler_t event){
-	//hago un casteo para poder obtener los datos que corresponden y poder tocarlos
+	/*EL event handler es un void* esto es de FreeRTOS*/
 	event_t*	ev = (event_t*)(event);
 	switch(ev->state){
 	case EVENT_INIT:
@@ -87,6 +86,7 @@ bool_t os_event_wait	(os_event_handler_t event){
 }
 
 bool_t os_event_set	(os_event_handler_t event){
+	/*EL event handler es un void* esto es de FreeRTOS*/
 	event_t*	ev = (event_t*)(event);
 	task_priority_t priority;
 	switch(ev->state){
@@ -122,6 +122,9 @@ bool_t os_event_set	(os_event_handler_t event){
 		os_error_hook();
 		break;
 	}
+	/*TODO:Evaluar si no es necesario hacer un cambio de contexto esta el fundamento:
+	 * Si la tarea a la que vuelvo es de mayor prioridad la estoy penalizando
+	 * SI la tarea a la que vuelvo es de menor prioridad esto penalizando a la que hace el event set*/
 	return TRUE;
 	//No forzamos un cambio de contexto, ya que la tarea que llamo a esto puede seguir ejecutando
 	//cosas -> Tal vez se podria hacer algo con las prioridades para ver si hacer o no un cambio

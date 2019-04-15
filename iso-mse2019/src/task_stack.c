@@ -4,13 +4,15 @@
 #include "task_stack.h"
 
 
-
+/*Funcion que inicializa un stack para guardar tareas*/
+//TODO:Me gustaria que tuviera metodos push back push pop pop back pop front
 void	 task_stack_init 			(task_stack_t *	task_stack){
 	task_stack->stack_initializated = TRUE;
 	task_stack->read_pointer 				= 0;
 	task_stack->write_pointer 			= 0;
 	task_stack->size								= 0;
 }
+/*Remueve un indice de tarea desde el frente de la cola usando el criterio FIFO*/
 bool_t task_stack_pop 			(task_stack_t * task_stack,uint32_t * data ){
 	if(task_stack->read_pointer == task_stack->write_pointer){
 		return FALSE;
@@ -20,6 +22,7 @@ bool_t task_stack_pop 			(task_stack_t * task_stack,uint32_t * data ){
 	task_stack->read_pointer = ((task_stack->read_pointer+1)%STACK_SIZE);
 	return TRUE;
 }
+/*Agrega un item al final de la cola, uno le pasa el indice de la tarea*/
 bool_t task_stack_push			(task_stack_t * task_stack,uint32_t   data ){
 	if(task_stack->size >= STACK_SIZE){
 		return FALSE;
@@ -29,6 +32,7 @@ bool_t task_stack_push			(task_stack_t * task_stack,uint32_t   data ){
 	task_stack->write_pointer = ((task_stack->write_pointer+1)%STACK_SIZE);
 	return TRUE;
 }
+/*Devulve si la cola esta vacia o entera*/
 bool_t task_stack_is_empty 	(task_stack_t * task_stack){
 	if(task_stack->size == 0){
 		return TRUE;
@@ -37,6 +41,8 @@ bool_t task_stack_is_empty 	(task_stack_t * task_stack){
 		return FALSE;
 	}
 }
+
+/*Devuelve si la cola esta llena*/
 bool_t task_stack_is_full  	(task_stack_t * task_stack){
 	if(task_stack->size == 0){
 		return TRUE;
@@ -46,6 +52,8 @@ bool_t task_stack_is_full  	(task_stack_t * task_stack){
 	}
 }
 
+/*No se usa aun y no esta probada pero no sirve para sacar un item de la cola*/
+/*Hace uso de pop and push para devolver los items a su lugar original*/
 bool_t tack_stack_remove_item(task_stack_t * task_stack,uint32_t item){
 	uint32_t i;
 	uint32_t data;
@@ -70,7 +78,7 @@ bool_t tack_stack_remove_item(task_stack_t * task_stack,uint32_t item){
 	}
 	return item_hit;
 }
-
+/*Nos devuelve el tamaño de la cola*/
 uint32_t task_stack_get_size 		(task_stack_t * task_stack){
 	return task_stack->size;
 }
