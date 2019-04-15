@@ -6,6 +6,11 @@
 #include "task_stack.h"
 
 /*==================[inclusiones]============================================*/
+//Numero maximo de las tareas permitidas por nuestro OS
+#define MAX_TASK_COUNT 10
+//Numero maximo de los eventos permitidas por nuestro OS
+#define MAX_EVENT_COUNT 5
+
 /*==================[c++]====================================================*/
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +48,7 @@ typedef struct  {
 	task_priority_t	priority;
 	uint32_t*				initial_stack_pointer;
 	uint32_t 				stack_size_bytes;
+	bool_t					event_waiting;
 }task_context_t;
 
 
