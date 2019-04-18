@@ -4,6 +4,7 @@
 #include "task2.h"
 #include "task3.h"
 #include "task4.h"
+#include "task5.h"
 #include <string.h>
 
 
@@ -25,12 +26,22 @@ int main (void){
 			__WFI();
 		}
 	}
+
+	if((tecla_1_event = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:TECLA 1\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
+			//debugger
+			__WFI();
+		}
+	}
 	/*Creación de las tarea que vamos a ejecutar, a la tarea task3 de la UART directamente
 	 * le damos baja prioridad para que no absorva a la otra*/
-	os_task_create(task1_stack,TASK1_STACK_SIZE_BYTES,task1,HIGH_PRIORITY	,(void*)0x11111111);
-	os_task_create(task2_stack,TASK2_STACK_SIZE_BYTES,task2,HIGH_PRIORITY	,(void*)0x22222222);
-	os_task_create(task4_stack,TASK4_STACK_SIZE_BYTES,task4,HIGH_PRIORITY	,(void*)0x44444444);
-	os_task_create(task3_stack,TASK3_STACK_SIZE_BYTES,task3,LOW_PRIORITY	,(void*)0x33333333);
+	os_task_create(task1_stack,TASK1_STACK_SIZE_BYTES,task1,HIGH_PRIORITY		,(void*)0x11111111);
+	os_task_create(task2_stack,TASK2_STACK_SIZE_BYTES,task2,HIGH_PRIORITY		,(void*)0x22222222);
+	os_task_create(task4_stack,TASK4_STACK_SIZE_BYTES,task4,HIGH_PRIORITY		,(void*)0x44444444);
+	os_task_create(task5_stack,TASK5_STACK_SIZE_BYTES,task5,MEDIUM_PRIORITY	,(void*)0x55555555);
+	os_task_create(task3_stack,TASK3_STACK_SIZE_BYTES,task3,LOW_PRIORITY		,(void*)0x33333333);
 
 	/*Inicializamos el O.S*/
 	os_init();
