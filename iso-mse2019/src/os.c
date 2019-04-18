@@ -338,3 +338,11 @@ void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
 
 }
 
+void os_enter_critical(void){
+	__disable_irq();
+}
+
+void os_quit_critical(void){
+	__enable_irq();
+}
+
