@@ -13,7 +13,7 @@ uint32_t 						task3_stack[TASK3_STACK_SIZE_BYTES/4];
 os_event_handler_t 	tecla_event;
 
 //TODO: Este arreglo de 4 eventos de teclas
-debounce_data_t tecla_array_copy[4];
+static debounce_data_t tecla_array_copy[4];
 
 void* task3 (void* a){
 	uint32_t i;
