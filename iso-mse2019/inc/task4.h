@@ -24,15 +24,19 @@ typedef enum {
 
 
 typedef struct {
-	gpioMap_t 		tacla;
+	gpioMap_t 		tecla;
 	fsmDebounce_t state;
-	bool_t 				tecla_liberada;
+	bool_t 				tecla_liberada_event;
+	bool_t 				tecla_presionada_event;
 	uint32_t 			ticks_presionada;
+	uint32_t 			primer_tick;
 }debounce_data_t;
 
 
-void* task4 (void* a);
-void* hook4 (void* p);
+void* task4 				(void* a);
+void 	debounce_init	(void);
+void 	copy_tecla_array(debounce_data_t * dst );
+void* hook4 				(void* p);
 
 
 #ifdef __cplusplus
