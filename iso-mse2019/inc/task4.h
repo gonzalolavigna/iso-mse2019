@@ -22,6 +22,10 @@ typedef enum {
 	BUTTON_RAISING,
 }fsmDebounce_t;
 
+#define TECLA_1_INDEX 0
+#define TECLA_2_INDEX 1
+#define TECLA_3_INDEX 2
+#define TECLA_4_INDEX 3
 
 typedef struct {
 	gpioMap_t 		tecla;
