@@ -20,4 +20,4 @@
 # Project path
 #PROJECT_PATH = iso-mse2019
 # Project name
-PROJECT_NAME = iso-mse2019
+PROJECT_NAME = iso-mse-2019-ejer2
