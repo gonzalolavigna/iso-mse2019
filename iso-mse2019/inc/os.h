@@ -82,6 +82,12 @@ void 		os_error_hook		(	void);
 
 void* 	idle_task(void * arg);
 
+/*Tareas para entrar y salir de las secciones criticas*/
+void os_enter_critical(void);
+void os_quit_critical(void);
+
+
+
 /*==================[declaracion datos a utilizarse externamente=============*/
 /*Esta es la lista de todas las tareas, claramente la necesitamos para pasar tareas
  * a sleeping, manejar los delays y tambien los eventos de semaforos*/
