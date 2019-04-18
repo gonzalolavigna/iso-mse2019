@@ -4,8 +4,10 @@
 #include "os_delay.h"
 #include "os_event.h"
 #include "sapi.h"
-#include "task4.h"
 #include "task3.h"
+#include "task4.h"
+#include "task5.h"
+
 
 uint32_t task4_stack[TASK4_STACK_SIZE_BYTES/4];
 
@@ -81,6 +83,10 @@ void* task4 (void* a){
 		//una tecla
 		if(hit == TRUE) {
 			os_event_set(tecla_event);
+			if(tecla_array[TECLA_1_INDEX].tecla_liberada_event == TRUE){
+				/*Informamos que solamente esta la tecla 1 event*/
+				os_event_set(tecla_1_event);
+			}
 		}
 		//Esto lo ponemos en el delay con 10.
 		os_task_delay(10);
