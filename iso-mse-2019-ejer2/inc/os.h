@@ -9,7 +9,9 @@
 //Numero maximo de las tareas permitidas por nuestro OS
 #define MAX_TASK_COUNT 10
 //Numero maximo de los eventos permitidas por nuestro OS
-#define MAX_EVENT_COUNT 5
+#define MAX_EVENT_COUNT 10
+//Numero maximo de los mutex que permite  nuestro OS
+#define MAX_MUTEX_COUNT 5
 
 /*==================[c++]====================================================*/
 #ifdef __cplusplus
