@@ -59,6 +59,7 @@ typedef struct  {
 	uint32_t*				initial_stack_pointer;
 	uint32_t 				stack_size_bytes;
 	bool_t					event_waiting;
+	uint32_t 				context_given_counter;
 }task_context_t;
 
 
@@ -87,6 +88,16 @@ void* 	idle_task(void * arg);
 /*Tareas para entrar y salir de las secciones criticas*/
 void os_enter_critical(void);
 void os_quit_critical(void);
+
+/*Tarea para obtener de una tarea especifica el contador de veces que le dieron un contexto
+ * de ejecucion*/
+uint32_t os_get_task_context_given_counter(uint32_t task_index);
+/*Sirve para obtener el contador de contextos dados*/
+uint32_t os_get_idle_contex_given_counter();
+/*Esta es la cantidad de veces que el os hizo un cambio de contexto*/
+uint32_t os_get_os_context_switch_counter(void);
+/*Devuelve la cantidad de tareas que esta ejecutando nuestro OS*/
+uint32_t os_get_task_count(void);
 
 
 
