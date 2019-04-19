@@ -17,6 +17,7 @@ extern "C" {
 
 extern 	uint32_t 						task3_stack[];
 extern 	os_event_handler_t 	tecla_event;
+extern  os_mutex_handler_t 	uart_mutex;
 
 void* task3 (void* a);
 void* hook3 (void* p);
