@@ -30,6 +30,8 @@ int main (void){
 	os_queue_init();
 	/*Todos los eventos no savemos como arrancan y para no tener conflicto los inicializamos con algo conocido*/
 	os_event_init_array();
+	/*Inicializamos todos los mutex para que arranquen todos en el mismo valor*/
+	os_mutex_init_array();
 
 	//Creo el evento de la tecla antes de lanzar el OS --> si es NULL me quedo esperando
 	if((tecla_event = os_event_init()) == NULL){
@@ -49,12 +51,24 @@ int main (void){
 			__WFI();
 		}
 	}
+
+	if((uart_mutex = os_mutex_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO MUTEX:UART\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
+			//debugger
+			__WFI();
+		}
+	}
+
+
+
 	/*Creación de las tarea que vamos a ejecutar, a la tarea task3 de la UART directamente
 	 * le damos baja prioridad para que no absorva a la otra*/
 	os_task_create(task1_stack,TASK1_STACK_SIZE_BYTES,task1,HIGH_PRIORITY		,(void*)0x11111111);
 	os_task_create(task2_stack,TASK2_STACK_SIZE_BYTES,task2,HIGH_PRIORITY		,(void*)0x22222222);
 	os_task_create(task4_stack,TASK4_STACK_SIZE_BYTES,task4,HIGH_PRIORITY		,(void*)0x44444444);
-	os_task_create(task5_stack,TASK5_STACK_SIZE_BYTES,task5,MEDIUM_PRIORITY	,(void*)0x55555555);
+	os_task_create(task5_stack,TASK5_STACK_SIZE_BYTES,task5,LOW_PRIORITY  	,(void*)0x55555555);
 	os_task_create(task6_stack,TASK6_STACK_SIZE_BYTES,task6,MEDIUM_PRIORITY	,(void*)0x66666666);
 	os_task_create(task3_stack,TASK3_STACK_SIZE_BYTES,task3,LOW_PRIORITY		,(void*)0x33333333);
 
