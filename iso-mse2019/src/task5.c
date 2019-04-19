@@ -4,6 +4,8 @@
 #include "os_delay.h"
 #include "os_event.h"
 #include "sapi.h"
+//Aca esta declarado el mutex
+#include "task3.h"
 #include "task4.h"
 #include "task5.h"
 
@@ -25,6 +27,10 @@ void* task5	(void* a){
 			copy_tecla_array(tecla_array_copy);
 			if(tecla_array_copy[TECLA_1_INDEX].tecla_liberada_event == TRUE){
 				/*Escribo y apago el LED BLUE teniendo en cuenta el arreglo de datos*/
+				//Esto deberia ocasionar el mismo uso de una sección critica por 3 y 5 tienen misma prioridad
+				os_mutex_lock(uart_mutex);
+				printf("TASK 5:TECLA %d PRESIONADA POR:%d TICKS\r\n",1,tecla_array_copy[TECLA_1_INDEX].ticks_presionada);
+				os_mutex_unlock(uart_mutex);
 				gpioWrite(LEDB,ON);
 				os_task_delay(tecla_array_copy[TECLA_1_INDEX].ticks_presionada);
 				gpioWrite(LEDB,OFF);

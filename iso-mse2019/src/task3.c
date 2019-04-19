@@ -11,6 +11,7 @@
 //Estos datos se comparten externamente
 uint32_t 						task3_stack[TASK3_STACK_SIZE_BYTES/4];
 os_event_handler_t 	tecla_event;
+os_mutex_handler_t 	uart_mutex;
 
 //TODO: Este arreglo de 4 eventos de teclas
 static debounce_data_t tecla_array_copy[4];
@@ -26,7 +27,10 @@ void* task3 (void* a){
 			copy_tecla_array(tecla_array_copy);
 			for(i=0;i<4;i++){
 				if(tecla_array_copy[i].tecla_liberada_event == TRUE){
-					printf("TECLA %d PRESIONADA POR:%d TICKS\r\n",i+1,tecla_array_copy[i].ticks_presionada);
+					//Entramos a una seccion donde compartimos el mismo recurso que es la UART
+					os_mutex_lock(uart_mutex);
+					printf("TASK 3:TECLA %d PRESIONADA POR:%d TICKS\r\n",i+1,tecla_array_copy[i].ticks_presionada);
+					os_mutex_unlock(uart_mutex);
 				}
 			}
 
