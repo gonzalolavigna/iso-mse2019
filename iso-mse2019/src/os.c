@@ -14,7 +14,9 @@
 //Haria que se chocaría con el que viene
 #define STACK_MIN_SIZE 20
 //Este es el stack asignado al contexto idle-> TODO:Podría ser menor
-#define IDLE_TASK_SIZE_BYTES 512
+#define IDLE_TASK_SIZE_BYTES 4096
+//Esto cuanta cuantos cambios de contexto hubieron hasta el momento los reseteamos a los 5000 cambios de contexto.
+#define MAX_CONTEXT_SWITCH_COUNTER 50000
 
 /*Variable globales del OS*/
 /*Contexto de las tareas, es un arreglo que se direcciona de acuerdo a la tarea
@@ -39,7 +41,8 @@ uint32_t idle_task_stack[IDLE_TASK_SIZE_BYTES / 4];
 /*El OS arranca siempre en OS_INIT, con os_init() con el primer pendsv se va a OS_TASK o OS_IDLE
  * Una vez que arranca nunca mas vuelve a OS_INIT*/
 os_state_t os_state = OS_INIT;
-
+//Esto cuenta cuantos cambios de contexto hubieron hasta el momento
+uint32_t context_switch_counter = 0;
 
 /*Esta funcion es de la clase de Pablo Ridolfi, solo se llama desde adentro de init task para encapsularla*/
 void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
@@ -51,6 +54,10 @@ void* idle_task(void * arg);
 void task_return_hook(void * ret_val);
 /*Esta funcion recorre las colas de prioridades, limpia las tareas en sleeping y hace el round robin*/
 bool_t search_next_task(uint32_t* task_index);
+
+//Esta tarea resetea todos los contadores de eventos dados a las tareas
+void reset_contex_given_counter(void);
+
 
 /*Declaracion de funciones externas utilizadas por el SO*/
 /*HAY QUE LLAMAR ESTA FUNCIÖN antes de hacer un os_init()*/
@@ -91,6 +98,8 @@ bool_t os_task_create(uint32_t stack[], uint32_t stack_size_bytes,
 	 * espera un evento no tiene que ser decrementado su contador de remaining ticks*/
 	/*TODO: Si queremos un funcionamiento porque un evento expire su tiempo hay que empezar por aca*/
 	task_list[task_count].event_waiting = FALSE;
+	//Esto cuenta cuantas veces nos dieron un contexto en el marco de la tarea
+	task_list[task_count].context_given_counter = 0;
 
 	//Inicializo el stack y ya queda actualizado el stack pointer al lugar donde tengo el stack
 	//para ejecutar la tarea
@@ -128,6 +137,8 @@ bool_t os_init(void) {
 	init_task_stack(idle_task_stack,
 	IDLE_TASK_SIZE_BYTES, &idle_contex.stack_pointer, idle_task,
 	    (void *) 0x99999999);
+	//Esto significa cuantas veces nos dieron el contexto del datos idle
+	idle_contex.context_given_counter = 0;
 
 	/*GPIOS de debug para ver con Analizador Logico GPIO 3 -> GET NEXT CONTEXT GPIO 4 -> SYSTICK*/
 	gpioInit(GPIO3, GPIO_OUTPUT);
@@ -247,6 +258,16 @@ uint32_t get_next_context(uint32_t current_sp) {
 		os_error_hook();
 		break;
 	}
+	context_switch_counter++;
+	//Significa que se va a ejecutar una tarea a continuacion y le cae un contexto
+	if(task_hit == TRUE){
+		task_list[task_index].context_given_counter++;
+	}else {
+		idle_contex.context_given_counter++;
+	}
+	if(context_switch_counter >= MAX_CONTEXT_SWITCH_COUNTER){
+		reset_contex_given_counter();
+	}
 	gpioToggle(GPIO3);
 	enable_sys_tick_irq();
 	return next_stack_pointer;
@@ -256,7 +277,7 @@ uint32_t get_next_context(uint32_t current_sp) {
  * pero al final de la misma, asi hago el round robin.
  * A medida que recorre las colas las tareas que estan durmiendo las saca de las colas
  * PAra que una tarea vuelva a la cola tiene que ser pueda por:
- * Vencimiento del daly la pone en la cola por atrás
+ * Vencimiento del delay la pone en la cola por atrás
  * Le dieron un evento
  * Recordar que el push los hacen las API del O.S*/
 
@@ -299,7 +320,8 @@ bool_t search_next_task(uint32_t* task_index) {
 					break;
 				case TASK_SLEEPING:
 					//La tarea que este en sleeping directamente se saca de la cola
-					//Porque recordar que en el principio del for se hizo un pop.
+					//Porque recordar que en el principio del for se hizo un pop. No se vuelve a ejecutar
+					//Hasta que la API la ponga en ready
 					break;
 				default:
 					//Nunca deberia haber una tarea que no este en un estado conocido
@@ -345,4 +367,32 @@ void os_enter_critical(void){
 void os_quit_critical(void){
 	__enable_irq();
 }
+
+void reset_contex_given_counter (void){
+	uint32_t i;
+	context_switch_counter = 0;
+	idle_contex.context_given_counter = 0;
+	for(i=0;i<task_count;i++){
+		task_list[i].context_given_counter = 0;
+	}
+}
+
+/*Tarea para obtener de una tarea especifica el contador de veces que le dieron un contexto
+ * de ejecucion*/
+uint32_t os_get_task_context_given_counter(uint32_t task_index){
+	return task_list[task_index].context_given_counter;
+}
+/*Sirve para obtener el contador de contextos dados*/
+uint32_t os_get_idle_contex_given_counter(){
+	return idle_contex.context_given_counter;
+}
+/*Esta es la cantidad de veces que el os hizo un cambio de contexto*/
+uint32_t os_get_os_context_switch_counter(void){
+	return context_switch_counter;
+}
+/*Devuelve la cantidad de tareas que esta ejecutando nuestro OS*/
+uint32_t os_get_task_count(void){
+	return task_count;
+}
+
 
