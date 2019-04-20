@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define TASK3_STACK_SIZE_BYTES 512
+#define TASK3_STACK_SIZE_BYTES 2048
 
 extern 	uint32_t 						task3_stack[];
 extern 	os_event_handler_t 	tecla_event;
