@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define TASK1_STACK_SIZE_BYTES 512
+#define TASK1_STACK_SIZE_BYTES 4096
 
 extern uint32_t task1_stack[];
 
