@@ -18,6 +18,8 @@ extern	uint32_t 					task6_stack[];
 //Hacemos un extern para que otros puedan usar el buffer circular de la SAPI
 extern  uint8_t 	 				uart_buffer_array[];
 extern 	circularBuffer_t 	uart_buffer_sapi;
+//
+extern os_event_handler_t uart_receive_event;
 
 void init_uart_circular_buffer(void);
 void* task6										(void* a);
