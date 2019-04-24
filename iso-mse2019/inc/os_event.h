@@ -57,6 +57,9 @@ os_event_handler_t 	os_event_init	(void);
 bool_t 							os_event_wait	(os_event_handler_t event);
 /*Esto tiene que ser llamado por otra tarea para darle un give y destrabar a la que llamo al wait*/
 bool_t 							os_event_set	(os_event_handler_t event);
+/*Para ser llamado desde una ISR*/
+bool_t 							os_event_set_from_irq(os_event_handler_t event);
+
 //Esta tarea inicializa los mutex con un estado conocido
 void 								os_mutex_init_array(void);
 //Esta tarea inicializa un mutex y obviamente los arroja con la sección en unlock
