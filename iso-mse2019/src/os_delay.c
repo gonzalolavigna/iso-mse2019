@@ -16,12 +16,8 @@ bool_t os_task_delay(uint32_t ticks) {
 		/*TODO:Todavia no encontre motivos porque un delay generaría un false*/
 		return TRUE;
 	}
-	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
-	disable_sys_tick_irq();
-	/*La tarea que llama a esta función pasa a sleeping hasta que se venzan los sistick*/
-	task_list[running_task_index].state = TASK_SLEEPING;
-	task_list[running_task_index].reamaining_ticks = ticks;
-	enable_sys_tick_irq();
+	//Pongo la tarea a dormirse sacandola del scheduler
+	os_put_current_task_to_sleep_ticks(ticks);
 	/*Llamamos al scheduler para que busque que proxima tarea ejecutar*/
 	do_scheduler();
 	return TRUE;
@@ -62,10 +58,8 @@ void update_delay(void) {
 				//Si queremos implementar un timeout para los eventos directamente tenemos que cambiar el enfoque
 				if(task_list[i].event_waiting == FALSE){
 					if ((--(task_list[i].reamaining_ticks)) == 0) {
-						//Pongo la tarea en ready y la pongo en la cola de prioridad que le corresponde
-						task_list[i].state = TASK_READY;
-						/*Tener en cuenta que el push la va a enviar al fondo de la cola*/
-						task_stack_push(&priority_queue[task_list[i].priority], i);
+						//Ponemos la tarea en ready para poder despertarla cuando correspoda
+						os_put_task_to_ready_from_irq(i);
 					}
 				}
 			break;
