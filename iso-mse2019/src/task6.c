@@ -7,13 +7,15 @@
 #include "sapi_circularBuffer.h"
 #include "task6.h"
 
-
 //Definicion para el stack de la tarea 6
 uint32_t task6_stack[TASK6_STACK_SIZE_BYTES/4];
 
 //Definicion del buffer circular para poder recibir los datos desde la UART
 uint8_t  uart_buffer_array[256];
 circularBuffer_t uart_buffer_sapi;
+
+os_event_handler_t uart_receive_event;
+
 
 //Funcion para printear cuando se llena el buffer circular para recibir por UART
 void uart_buffer_full_message(void *);
@@ -37,10 +39,11 @@ void uart_buffer_full_message(void * no_usado){
 void* task6	(void* a){
 	uint8_t temp_data;
 	while(1){
+		os_event_wait(uart_receive_event);
 		if(circularBufferRead(&uart_buffer_sapi,&temp_data) == CIRCULAR_BUFFER_EMPTY){
 			//Esta tarea la paramos por 100 ms para que otras hagan sus cosas/ solo se despierta
 			//para ver si hay algo en el buffer circular y lo reenvia por la UART.
-			os_task_delay(100);
+			//os_task_delay(100);
 		}
 		else {
 			//Hago un reenvio de los datos recibidos
