@@ -46,37 +46,28 @@ bool_t os_event_wait	(os_event_handler_t event){
 		//La que llama al wait por primera vez es la tarea que va a esperar.
 		ev->state = EVENT_WAIT;
 		ev->task_waiting = running_task_index;
-		//Ponemos la tarea en modo de waiting
 
-		//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
-		disable_sys_tick_irq();
-		task_list[running_task_index].event_waiting = TRUE;
-		task_list[running_task_index].state 				= TASK_SLEEPING;
-		enable_sys_tick_irq();
+		//POnemos la tarea a dormir porque vino un event_wait
+		os_put_current_task_to_sleep_event(event);
 		break;
 	case EVENT_WAIT:
-		if((running_task_index > task_count) || (ev->task_waiting != running_task_index)){
-			//Esta es una condición imposible ya que una vez que una tarea que hizo el primer wait
-			//no puede cambiar. Es restrictivo
+		if(running_task_index > task_count){
 			return FALSE;
 		}
-		//La que llama al wait por primera vez es la tarea que va a esperar.
-		//Es volver a hacer otra vez lo mismo, mejor ser claros.
+		//Claramente si estoy en wait es porque otra tarea llamo a un wait, hay mas de una trabada
+		os_put_current_task_to_sleep_event(event);
 		ev->state = EVENT_WAIT;
+		ev->task_waiting = running_task_index;
 		break;
 	case EVENT_SET:
 		if((running_task_index > task_count)){
-			//Esta es una condición imposible ya que una vez que una tarea que hizo el primer wait
-			//no puede cambiar. Es restrictivo
 			os_error_hook();
 		}
 		ev->state = EVENT_WAIT;
 		ev->task_waiting = running_task_index;
-		//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
-		disable_sys_tick_irq();
-		task_list[running_task_index].event_waiting = TRUE;
-		task_list[running_task_index].state 				= TASK_SLEEPING;
-		enable_sys_tick_irq();
+		//Ponemos la tarea a dormir porque vino un wait
+		os_put_current_task_to_sleep_event(event);
+
 		break;
 	default:
 		//Si estamos en un estado que no corresponde claramente algo salio muy mal
@@ -91,7 +82,6 @@ bool_t os_event_wait	(os_event_handler_t event){
 bool_t os_event_set	(os_event_handler_t event){
 	/*EL event handler es un void* esto es de FreeRTOS*/
 	event_t*	ev = (event_t*)(event);
-	task_priority_t priority;
 	switch(ev->state){
 	case EVENT_INIT:
 		//En EVENT_INIT  directamente no hacemos nada porque no interesa para el caso
@@ -99,27 +89,13 @@ bool_t os_event_set	(os_event_handler_t event){
 		return FALSE;
 		break;
 	case EVENT_WAIT:
-		//Actualizamos a que tarea vamos a enviar el evento
-		priority = task_list[ev->task_waiting].priority;
-		//Obivamente el evento de este es un event set // Devolvemos el control al SO
-		//para que encole esta tarea.
+		//Obivamente el evento de este es un event set // Devolvemos el control al SO para que encole esta tarea.
 		ev->state = EVENT_SET;
-		disable_sys_tick_irq();
-		//Pasamos la tarea a ready y que no espera ningun evento
-		//Por ejemplo la tarea que se libera podría llamar a un delay
-		task_list[ev->task_waiting].event_waiting = FALSE;
-		task_list[ev->task_waiting].state 				= TASK_READY;
-		//Ponemos la tarea en la cola que corresponde en el fondo, si hay mas tarea de la misma prioridad
-		//Se ejecutaran primero estas tarea
-		task_stack_push(&priority_queue[priority],ev->task_waiting);
-		enable_sys_tick_irq();
+		//La tarea que estan durmiendo las ponemos a despertar
+		os_put_tasks_to_ready_from_event(event);
 		break;
 	case EVENT_SET:
-		//En este caso si damos un event set no hacemos directamente nada porque
-		//hacer un set cuando esta seteado no debería hacer4 nada.
-		//En resumen hacer 20 event set es lo mismo que hacer uno solo, mientras no hayan echo un wait
-		//Si hay una llave mandar a poner la llaver 20 veces es equivalente a ponerla una vez porque
-		//hay una sola llave.
+		//Si esta en set significa que no hay nada que esperar, o nada bloqueado.
 		break;
 	default:
 		os_error_hook();
@@ -134,6 +110,15 @@ bool_t os_event_set	(os_event_handler_t event){
 	//de contexto
 }
 
+
+bool_t os_event_set_from_irq(os_event_handler_t event){
+	bool_t rv;
+	//Ponemos el event
+	rv=os_event_set(event);
+	//Lanzamos una nueva reconfiguracion;
+	do_scheduler();
+	return rv;
+}
 
 
 void os_mutex_init_array(void){
