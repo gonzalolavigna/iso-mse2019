@@ -21,7 +21,7 @@ void* task5	(void* a){
 	os_task_delay(100);
 	gpioWrite(LEDB,OFF);
 	while(1){
-		if(os_event_wait(tecla_1_event) == TRUE){
+		if(os_event_wait(tecla_event) == TRUE){
 			/*Copio el arreglo para minimizar el tiempo de uso
 			 * TODO:Aca vendria bien un mutex*/
 			copy_tecla_array(tecla_array_copy);
@@ -35,17 +35,12 @@ void* task5	(void* a){
 				os_task_delay(tecla_array_copy[TECLA_1_INDEX].ticks_presionada);
 				gpioWrite(LEDB,OFF);
 			}
-			else {
-				uartWriteString(UART_USB,"ERROR TECLA");
-			}
 		}else {
 			/*Espero por siempre aca asi me doy cuenta
 			 * que fallo*/
-			uartWriteString(UART_USB,"ERROR TASK 5");
+			uartWriteString(UART_USB,"ERROR EVENTO TASK 5");
 		}
-
 	}
-
 	return (void *)TRUE;
 }
 
