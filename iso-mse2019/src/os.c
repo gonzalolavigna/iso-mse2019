@@ -1,5 +1,6 @@
 #include "os.h"
 #include "os_delay.h"
+#include "os_event.h"
 #include <stdint.h>
 #include "string.h"
 #include "sapi.h"
@@ -14,7 +15,7 @@
 //Haria que se chocaría con el que viene
 #define STACK_MIN_SIZE 20
 //Este es el stack asignado al contexto idle-> TODO:Podría ser menor
-#define IDLE_TASK_SIZE_BYTES 4096
+#define IDLE_TASK_SIZE_BYTES 2048
 //Esto cuanta cuantos cambios de contexto hubieron hasta el momento los reseteamos a los 5000 cambios de contexto.
 #define MAX_CONTEXT_SWITCH_COUNTER 50000
 
@@ -98,6 +99,8 @@ bool_t os_task_create(uint32_t stack[], uint32_t stack_size_bytes,
 	 * espera un evento no tiene que ser decrementado su contador de remaining ticks*/
 	/*TODO: Si queremos un funcionamiento porque un evento expire su tiempo hay que empezar por aca*/
 	task_list[task_count].event_waiting = FALSE;
+	//El evento al que apunta es el NULL sera responsabilidad de la API asignarlo
+	task_list[task_count].event_handler = NULL;
 	//Esto cuenta cuantas veces nos dieron un contexto en el marco de la tarea
 	task_list[task_count].context_given_counter = 0;
 
@@ -395,4 +398,86 @@ uint32_t os_get_task_count(void){
 	return task_count;
 }
 
+/*Creamos una tarea para sacar una tarea del scheduler*/
+void os_put_current_task_to_sleep_ticks (uint32_t ticks){
+	task_priority_t priority;
+	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
+	disable_sys_tick_irq();
+	task_list[running_task_index].state = TASK_SLEEPING;
+	task_list[running_task_index].reamaining_ticks = ticks;
+	//Nos vamos a la cola con la prioridad correcta
+	priority = task_list[running_task_index].priority;
+	//Removamos la tarea de la cola de su respectiva prioridad
+	if(tack_stack_remove_item(&priority_queue[priority],running_task_index) == FALSE){
+		//Si no lo pude remover estamos en un problema
+		os_error_hook();
+	}
+	//Ponemos el sys tick de vuelta a correr
+	enable_sys_tick_irq();
+}
 
+void os_put_task_to_ready_from_irq (uint32_t task_index){
+	task_priority_t priority;
+	//Ponemos la tarea en READY
+	task_list[task_index].state = TASK_READY;
+	//Nos vamos a la cola con la prioridad correcta
+	priority = task_list[task_index].priority;
+	//Agregamos la tarea a su propia cola de priodiades
+	//Sino la podemos pushear es que hay algo mal en nuestro OS.
+	if(task_stack_push(&priority_queue[priority],task_index) == FALSE){
+		os_error_hook();
+	}
+}
+void os_put_task_to_ready(uint32_t task_index){
+	task_priority_t priority;
+	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
+	disable_sys_tick_irq();
+	//Ponemos la tarea en READY
+	task_list[task_index].state = TASK_READY;
+	//Nos vamos a la cola con la prioridad correcta
+	priority = task_list[task_index].priority;
+	//Agregamos la tarea a su propia cola de priodiades
+	//Sino la podemos pushear es que hay algo mal en nuestro OS.
+	if(task_stack_push(&priority_queue[priority],task_index) == FALSE){
+		os_error_hook();
+	}
+	//Ponemos el sys tick de vuelta a correr
+	enable_sys_tick_irq();
+}
+
+void os_put_current_task_to_sleep_event ( os_event_handler_t event){
+	task_priority_t priority;
+	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
+	disable_sys_tick_irq();
+	task_list[running_task_index].event_waiting = TRUE;
+	//Apuntamos el evento que la esta poniendo a dormir
+	task_list[running_task_index].event_handler = event;
+	//La tarea efectivamente pasa a sleeping
+	task_list[running_task_index].state 				= TASK_SLEEPING;
+	priority = task_list[running_task_index].priority;
+	//Removamos la tarea de la cola de su respectiva prioridad
+	if(tack_stack_remove_item(&priority_queue[priority],running_task_index) == FALSE){
+		//Si no lo pude remover estamos en un problema
+		os_error_hook();
+	}
+	//Volvemos a que el sistick nos devuelva el control
+	enable_sys_tick_irq();
+}
+
+void os_put_tasks_to_ready_from_event (os_event_handler_t event){
+	uint32_t i;
+
+	disable_sys_tick_irq();
+	for(i=0;i<task_count;i++){
+		if((task_list[i].state == TASK_SLEEPING) &&
+				(task_list[i].event_waiting == TRUE)&&
+				(task_list[i].event_handler == event)){
+			//Tarea que se despiera
+			os_put_task_to_ready(i);
+			//La tarea no esta esperando mas un evento a que suceda
+			task_list[i].event_waiting = FALSE;
+			task_list[i].event_handler = NULL;
+		}
+	}
+	enable_sys_tick_irq();
+}
