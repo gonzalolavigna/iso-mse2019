@@ -11,9 +11,9 @@
 
 uint32_t task4_stack[TASK4_STACK_SIZE_BYTES/4];
 
+
 gpioMap_t teclas[] = {TEC1,TEC2,TEC3,TEC4};
 #define TECLAS_VALIDAS sizeof(teclas)/sizeof(gpioMap_t)
-
 debounce_data_t tecla_array[TECLAS_VALIDAS];
 
 void debounce_init(void){
