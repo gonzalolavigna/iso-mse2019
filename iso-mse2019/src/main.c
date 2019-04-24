@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include "math.h"
 #include "sapi.h"
 #include "sapi_circularBuffer.h"
 #include "os.h"
@@ -8,11 +10,10 @@
 #include "task4.h"
 #include "task5.h"
 #include "task6.h"
-#include <string.h>
-#include "math.h"
+#include "utils.h"
+
 
 void onRx (void *noUsado);
-
 
 int main (void){
 
@@ -66,6 +67,17 @@ int main (void){
 		}
 	}
 
+
+	if((uart_receive_event = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO: RECEPION UART\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
+			//debugger
+			__WFI();
+		}
+	}
+
+
 	/*Creación de las tarea que vamos a ejecutar, a la tarea task3 de la UART directamente
 	 * le damos baja prioridad para que no absorva a la otra*/
 	os_task_create(task1_stack,TASK1_STACK_SIZE_BYTES,task1,HIGH_PRIORITY		,(void*)0x11111111);
@@ -86,18 +98,31 @@ int main (void){
 	return TRUE;
 }
 
+/*Tarea para atajar la interrupcion de recepcion de una uart y ponerlo en un buffer tipo SAPI**/
+void onRx (void *noUsado){
+	static char c;
+	c= uartRxRead(UART_USB);
+	//Mensaje de Debug
+	//	printf( "Recibimos <<%c>> por UART\r\n", c );
+	circularBufferWrite(&uart_buffer_sapi,&c);
+	os_event_set_from_irq(uart_receive_event);
+}
+
 /*Prendemos algun LED para indicar que estamos haciendo cambio a IDLE
  * Creo que menos luminosidad nos indicara que tanto tenemos ocupado el O.S*/
 void* 	idle_task(void * arg){
 	uint32_t i;
-	uint32_t task_context_switch_count[MAX_TASK_COUNT];
-	uint32_t os_context_switch_count;
-	uint32_t idle_context_switch_count;
-	uint32_t task_count;
-	float 	 f;
+	static uint32_t task_context_switch_count[MAX_TASK_COUNT];
+	static uint32_t os_context_switch_count;
+	static uint32_t idle_context_switch_count;
+	static uint32_t task_count;
+	static float 	 f;
+	static uint8_t   print_float_number[16];
+
 	task_count = os_get_task_count();
-	printf("Tareas Creadas:%d",task_count);
+	printf("Tareas Creadas:%d\r\n",task_count);
 	while(1){
+
 		/*Cada vez que entramos al hook que nos da el OS hacemos un gpioToggle del LED 3*/
 		gpioToggle(LED3);
 		/*Obtengo los datos para printearlos con la tarea idle*/
@@ -108,23 +133,17 @@ void* 	idle_task(void * arg){
 		}
 		printf("CONTEXT SWITCH OS:%d\r\n",os_context_switch_count);
 		for(i=0;i<task_count;i++){
- 			printf("TASK%d CONTEXT GIVEN:%d PORCENTAJE:%2.2f \%\r\n",i+1,task_context_switch_count[i],100*(float)task_context_switch_count[i]/os_context_switch_count);
+			convert_float_to_str(print_float_number,100*(float)task_context_switch_count[i]/os_context_switch_count,2);
+			printf("TASK%d CONTEXT GIVEN:%d PORCENTAJE:%s\r\n",i+1,task_context_switch_count[i],print_float_number);
   		}
- 		printf("IDLE CONTEXT GIVEN:%d PORCENTAJE:%2.2f \r\n",idle_context_switch_count,100*(float)idle_context_switch_count/os_context_switch_count);
+		convert_float_to_str(print_float_number,100*(float)idle_context_switch_count/os_context_switch_count,2);
+		printf("IDLE CONTEXT GIVEN:%d PORCENTAJE:%s \r\n",idle_context_switch_count,print_float_number);
 		//Esperamos 1 segundo con una funcion bloqueante que no hace uso del Sistick
-		//Es 1 segundo inadecuado y solo es para no colapsar la consola
-		delayInaccurateMs(1000);
+		delayInaccurateMs(10000);
 		__WFI();
 	}
 }
 
-/*Tarea para atajar la interrupcion de recepcion de una uart y ponerlo en un buffer tipo SAPI**/
-void onRx (void *noUsado){
-	static char c;
-	c= uartRxRead(UART_USB);
-	//Mensaje de Debug
-	//	printf( "Recibimos <<%c>> por UART\r\n", c );
-	circularBufferWrite(&uart_buffer_sapi,&c);
-}
+
 
 
