@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "sapi.h"
 #include "task_stack.h"
+#include "os_event.h"
 
 /*==================[inclusiones]============================================*/
 //Numero maximo de las tareas permitidas por nuestro OS
@@ -51,15 +52,16 @@ typedef enum {
 
 /*Datos para poder tener la informacion de la tarea actual.*/
 typedef struct  {
-	task_state_t 		state;
-	uint32_t				stack_pointer;
-	uint32_t				task_index;
-	uint32_t				reamaining_ticks;
-	task_priority_t	priority;
-	uint32_t*				initial_stack_pointer;
-	uint32_t 				stack_size_bytes;
-	bool_t					event_waiting;
-	uint32_t 				context_given_counter;
+	task_state_t 				state;
+	uint32_t						stack_pointer;
+	uint32_t						task_index;
+	uint32_t						reamaining_ticks;
+	task_priority_t			priority;
+	uint32_t*						initial_stack_pointer;
+	uint32_t 						stack_size_bytes;
+	bool_t							event_waiting;
+	os_event_handler_t 	event_handler;
+	uint32_t 						context_given_counter;
 }task_context_t;
 
 
@@ -99,7 +101,16 @@ uint32_t os_get_os_context_switch_counter(void);
 /*Devuelve la cantidad de tareas que esta ejecutando nuestro OS*/
 uint32_t os_get_task_count(void);
 
+/*Creamos una tarea para sacar una tarea del scheduler*/
+void os_put_current_task_to_sleep_ticks (uint32_t ticks);
 
+/*Hacemos una funcion para poner en ready una tarea*/
+void os_put_task_to_ready_from_irq (uint32_t task_index);
+void os_put_task_to_ready(uint32_t task_index);
+
+/*Tarea para poner a dormir si lo que realiza es un evento*/
+void os_put_current_task_to_sleep_event ( os_event_handler_t event);
+void os_put_tasks_to_ready_from_event 	(os_event_handler_t event);
 
 /*==================[declaracion datos a utilizarse externamente=============*/
 /*Esta es la lista de todas las tareas, claramente la necesitamos para pasar tareas
