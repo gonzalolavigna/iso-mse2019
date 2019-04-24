@@ -19,7 +19,7 @@ static debounce_data_t tecla_array_copy[4];
 void* task3 (void* a){
 	uint32_t i;
 	//Mensaje de bienvenida de la Tarea 3 para
-	uartWriteString(UART_USB,"TASK 3-EVENTOS-TECLAS-UART-WRITE\r\n");
+	uartWriteString(UART_USB,"TASK 3-EVENTOS-TECLAS-UART-FLOAT-REMOVE-ITEM-FLOAT-TO-STR-PUT-TASK-TO-SLEEP-READY\r\n");
 	gpioInit(GPIO2,GPIO_OUTPUT);
 	gpioWrite(GPIO2,ON);
 	while(1){
