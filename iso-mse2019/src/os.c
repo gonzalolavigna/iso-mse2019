@@ -62,7 +62,7 @@ void reset_contex_given_counter(void);
 
 /*Declaracion de funciones externas utilizadas por el SO*/
 /*HAY QUE LLAMAR ESTA FUNCIÖN antes de hacer un os_init()*/
-bool_t os_queue_init(void) {
+bool_t os_priority_queue_init(void) {
 	uint32_t i;
 	i = MAX_PRIORITY_QUEUE;
 	/*Inicializa todas las colas en los valores iniciales para evitar que colpse el S.O*/
@@ -104,17 +104,14 @@ bool_t os_task_create(uint32_t stack[], uint32_t stack_size_bytes,
 	//Esto cuenta cuantas veces nos dieron un contexto en el marco de la tarea
 	task_list[task_count].context_given_counter = 0;
 
-	//Inicializo el stack y ya queda actualizado el stack pointer al lugar donde tengo el stack
-	//para ejecutar la tarea
-	init_task_stack(stack, stack_size_bytes, &task_list[task_count].stack_pointer,
-	    entry_point, arg);
+	//Inicializo el stack y ya queda actualizado el stack pointer al lugar donde tengo el stack para ejecutar la tarea
+	init_task_stack(stack, stack_size_bytes, &task_list[task_count].stack_pointer, entry_point, arg);
 
 	//Pongo en la cola, el indice de la tarea que se esta creando
 	/*Por ejemplo:Si hay 3 Tareas con HIGH_PRIORITY la cola va a inicializarse con 3 valores*/
 	task_stack_push(&priority_queue[priority], task_count);
 	//Incremento la cantidad de tarea en el scheduler
 	task_count++;
-
 	return TRUE;
 }
 
@@ -138,19 +135,17 @@ bool_t os_init(void) {
 	//Por definicion la tarea idle no permite ningun evento
 	idle_contex.event_waiting = FALSE;
 	init_task_stack(idle_task_stack,
-	IDLE_TASK_SIZE_BYTES, &idle_contex.stack_pointer, idle_task,
-	    (void *) 0x99999999);
+	IDLE_TASK_SIZE_BYTES, &idle_contex.stack_pointer, idle_task,(void *) 0x99999999);
 	//Esto significa cuantas veces nos dieron el contexto del datos idle
 	idle_contex.context_given_counter = 0;
 
 	/*GPIOS de debug para ver con Analizador Logico GPIO 3 -> GET NEXT CONTEXT GPIO 4 -> SYSTICK*/
 	gpioInit(GPIO3, GPIO_OUTPUT);
 	gpioInit(GPIO4, GPIO_OUTPUT);
-	/*TODO:Evaluar si no es necesario hacer un primer cambio de contexto,creo que estamos dando el arranque con el primer Sistick*/
+	/*TODO:Evaluar si no es necesario hacer un primer cambio de contexto,estamos dando el arranque con el primer Sistick*/
 	return TRUE;
 }
 
-/*TODO: Pasar a definición con weak()*/
 void* __attribute__((weak))idle_task(void * arg) {
 	while (1) {
 		__WFI();
@@ -163,6 +158,7 @@ void task_return_hook(void * ret_val) {
 	}
 }
 
+///TODO:implementar para que pueda aceptar void* hacer algun print de algun problema con el OS.
 void os_error_hook(void) {
 	while (1) {
 		__WFI();
@@ -171,8 +167,7 @@ void os_error_hook(void) {
 
 uint32_t get_next_context(uint32_t current_sp) {
 	uint8_t 	i;
-	/*Si hay alguna tarea en READY esto es TRUE, si es FALSE implica que hay
-	 * que hacer uso de la tarea IDLE*/
+	//Si hay alguna tarea en READY esto es TRUE, si es FALSE implica que hay que hacer uso de la tarea IDLE*/
 	bool_t 		task_hit = FALSE;
 	/*Siempre devuelvo el stack de donde tengo que desempaquetar el stack*/
 	uint32_t 	next_stack_pointer;
@@ -180,9 +175,9 @@ uint32_t get_next_context(uint32_t current_sp) {
 	uint32_t 	task_index;
 
 	gpioToggle(GPIO3);
-	/*Esto viene porque no quiero que el Sistick me interrumpa en un cambio de contexto ya que los dos
-	 * hacen uso de las variable de estado de las tareas y de las colas -> Y puedo tener overrride de
-	 * datos TODO:Existe alguna mejor manera de hacer esto?*/
+	//Esto viene porque no quiero que el Sistick me interrumpa en un cambio de contexto ya que los dos hacen uso de las
+	//variable de estado de las tareas y de las colas -> Y puedo tener overrride de  datos T
+	 //TODO:Investigar si existe alguna mejor manera de hacer esto, es menos dañino que deshabilitar todas las IRQ?
 	disable_sys_tick_irq();
 	switch (os_state) {
 	case OS_INIT:
@@ -261,8 +256,9 @@ uint32_t get_next_context(uint32_t current_sp) {
 		os_error_hook();
 		break;
 	}
+	//Esto sirve para imprimir informacion de debugging.
 	context_switch_counter++;
-	//Significa que se va a ejecutar una tarea a continuacion y le cae un contexto
+	//Significa que se va a ejecutar una tarea a continuacion y le cae un contexto por lo que sumamos su contexto
 	if(task_hit == TRUE){
 		task_list[task_index].context_given_counter++;
 	}else {
@@ -276,13 +272,12 @@ uint32_t get_next_context(uint32_t current_sp) {
 	return next_stack_pointer;
 }
 
-/*Busca la primera tarea en READY, si hay alguna la pone de vuelta en la cola
- * pero al final de la misma, asi hago el round robin.
- * A medida que recorre las colas las tareas que estan durmiendo las saca de las colas
- * PAra que una tarea vuelva a la cola tiene que ser pueda por:
- * Vencimiento del delay la pone en la cola por atrás
- * Le dieron un evento
- * Recordar que el push los hacen las API del O.S*/
+//Busca la primera tarea en READY, si hay alguna la pone de vuelta en la cola pero al final de la misma, asi hago el round robin.
+//A medida que recorre las colas las tareas que estan durmiendo las saca de las colas PAra que una tarea vuelva a la
+//cola tiene que ser pueda por:
+// Vencimiento del delay la pone en la cola por atrás
+// Le dieron un evento
+// Recordar que el push los hacen las API del O.S*/
 
 bool_t search_next_task(uint32_t* task_index) {
 	bool_t task_hit = FALSE;
@@ -348,6 +343,7 @@ void do_scheduler(void) {
 	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
+//Funcion utilizada en clase, y de donde se parte para armar el contexto inicial
 void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
     uint32_t *stack_pointer, task_type_f entry_point, void * arg) {
 
@@ -360,45 +356,19 @@ void init_task_stack(uint32_t stack[], uint32_t stack_size_bytes,
 	stack[stack_size_bytes / 4 - 9] = 0xFFFFFFF9; /*LR IRQ*/
 
 	*stack_pointer = (uint32_t) &(stack[stack_size_bytes / 4 - 17]); //Corri el stack point 8 lugares hacia donde crece la pila
-
 }
 
+//Funcion que deshabilita todas las IRQ, las brindamos por si alguien quiere usarla
 void os_enter_critical(void){
 	__disable_irq();
 }
 
+//Funcion que habilita todas las IRQ, las brindamos por si alguien quiere usarla.
 void os_quit_critical(void){
 	__enable_irq();
 }
 
-void reset_contex_given_counter (void){
-	uint32_t i;
-	context_switch_counter = 0;
-	idle_contex.context_given_counter = 0;
-	for(i=0;i<task_count;i++){
-		task_list[i].context_given_counter = 0;
-	}
-}
-
-/*Tarea para obtener de una tarea especifica el contador de veces que le dieron un contexto
- * de ejecucion*/
-uint32_t os_get_task_context_given_counter(uint32_t task_index){
-	return task_list[task_index].context_given_counter;
-}
-/*Sirve para obtener el contador de contextos dados*/
-uint32_t os_get_idle_contex_given_counter(){
-	return idle_contex.context_given_counter;
-}
-/*Esta es la cantidad de veces que el os hizo un cambio de contexto*/
-uint32_t os_get_os_context_switch_counter(void){
-	return context_switch_counter;
-}
-/*Devuelve la cantidad de tareas que esta ejecutando nuestro OS*/
-uint32_t os_get_task_count(void){
-	return task_count;
-}
-
-/*Creamos una tarea para sacar una tarea del scheduler*/
+/*Creamos una tarea para sacar una tarea del scheduler pasandola a sleep*/
 void os_put_current_task_to_sleep_ticks (uint32_t ticks){
 	task_priority_t priority;
 	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
@@ -416,6 +386,9 @@ void os_put_current_task_to_sleep_ticks (uint32_t ticks){
 	enable_sys_tick_irq();
 }
 
+//De todos los indices de tareas, ponemos la misma a despertarse
+//Solo se diferencia que no apaga el sistick, ya que a priori no sabemos que puede hacer una IRQ
+
 void os_put_task_to_ready_from_irq (uint32_t task_index){
 	task_priority_t priority;
 	//Ponemos la tarea en READY
@@ -428,6 +401,7 @@ void os_put_task_to_ready_from_irq (uint32_t task_index){
 		os_error_hook();
 	}
 }
+//De todos los indices de tareas, ponemos la misma a despertarse
 void os_put_task_to_ready(uint32_t task_index){
 	task_priority_t priority;
 	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
@@ -445,6 +419,8 @@ void os_put_task_to_ready(uint32_t task_index){
 	enable_sys_tick_irq();
 }
 
+//Esta tarea es para ser llamada de un evento y la pone a dormir, tambien le asigna el puntero al evento
+//que la puso a dormir para asi poder despertarla mas tarse.
 void os_put_current_task_to_sleep_event ( os_event_handler_t event){
 	task_priority_t priority;
 	//Habilitamos una sección donde el Systick nos puede cambiar el estado de las tareas
@@ -464,6 +440,9 @@ void os_put_current_task_to_sleep_event ( os_event_handler_t event){
 	enable_sys_tick_irq();
 }
 
+//Esta funcion despierta todas las tareas que estan dormidas por un evento.
+//PAra eso recorre toda la task list no le importa prioridades.
+//Sabemos por el scheduler que se va a ejecutar la que este en la cola mas prioritaria.
 void os_put_tasks_to_ready_from_event (os_event_handler_t event){
 	uint32_t i;
 
@@ -476,8 +455,40 @@ void os_put_tasks_to_ready_from_event (os_event_handler_t event){
 			os_put_task_to_ready(i);
 			//La tarea no esta esperando mas un evento a que suceda
 			task_list[i].event_waiting = FALSE;
+			//Desapuntamos el evento que la puso a dormir.
+			//Nuestro OS no permite que una tarea pueda ser despertada por mas de un evento.
+			//Por el momento creo que eso no lo permite ningun RTOS. Una tarea se pone a dormir por un solo evento.
 			task_list[i].event_handler = NULL;
 		}
 	}
 	enable_sys_tick_irq();
+}
+
+
+//Todas estas tareas sirven para sacar una metrica de como se desempeñan las tareas de nuestros OS.
+//Reseatea todos los contador de cambiso de contextos datos a las tareas.
+void reset_contex_given_counter (void){
+	uint32_t i;
+	context_switch_counter = 0;
+	idle_contex.context_given_counter = 0;
+	for(i=0;i<task_count;i++){
+		task_list[i].context_given_counter = 0;
+	}
+}
+/*Tarea para obtener de una tarea especifica el contador de veces que le dieron un contexto
+ * de ejecucion*/
+uint32_t os_get_task_context_given_counter(uint32_t task_index){
+	return task_list[task_index].context_given_counter;
+}
+/*Sirve para obtener el contador de contextos dados*/
+uint32_t os_get_idle_contex_given_counter(){
+	return idle_contex.context_given_counter;
+}
+/*Esta es la cantidad de veces que el os hizo un cambio de contexto*/
+uint32_t os_get_os_context_switch_counter(void){
+	return context_switch_counter;
+}
+/*Devuelve la cantidad de tareas que esta ejecutando nuestro OS*/
+uint32_t os_get_task_count(void){
+	return task_count;
 }

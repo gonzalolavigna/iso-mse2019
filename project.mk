@@ -21,9 +21,9 @@
 #PROJECT_PATH = iso-mse2019
 # Project name
 #PROJECT_NAME = iso-mse-2019-ejer2
-#PROJECT_NAME = iso-mse2019
+PROJECT_NAME = iso-mse2019
 #PROJECT_NAME  = iso-mse-2019-final
 #PROJECT_NAME  = iso-mse-2019-final-irq
-PROJECT_NAME  = iso-mse-2019-irq-colas
+#PROJECT_NAME  = iso-mse-2019-irq-colas
 #PROJECT_PATH = examples_c
 #PROJECT_NAME = newlib_printf_scanf

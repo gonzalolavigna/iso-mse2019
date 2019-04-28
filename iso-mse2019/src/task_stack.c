@@ -52,8 +52,11 @@ bool_t task_stack_is_full  	(task_stack_t * task_stack){
 	}
 }
 
-/*No se usa aun y no esta probada pero no sirve para sacar un item de la cola*/
-/*Hace uso de pop and push para devolver los items a su lugar original*/
+//Busca en una cola si encuentra una tarea la remueve. Devuelve TRUE si lo encuentra y lo remueve.
+//Si no lo encuenta devuelve falsa.
+//Va sacando y poniendo para reacomodar el stack
+//Obviamente el tiempo crece linealmente a medida si se agregan 255 tareas
+//Pero nuestro OS esta acotado a 10 tareas.
 bool_t tack_stack_remove_item(task_stack_t * task_stack,uint32_t item){
 	uint32_t i;
 	uint32_t data;

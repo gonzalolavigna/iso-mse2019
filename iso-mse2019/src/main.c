@@ -4,93 +4,120 @@
 #include "sapi.h"
 #include "sapi_circularBuffer.h"
 #include "os.h"
-#include "task1.h"
-#include "task2.h"
-#include "task3.h"
-#include "task4.h"
-#include "task5.h"
-#include "task6.h"
+#include "os_queue.h"
+#include "os_event.h"
+#include "task_debounce.h"
+#include "task_print.h"
+#include "task_led_green.h"
+#include "task_led_red.h"
+#include "task_led_yellow.h"
+#include "task_led_blue.h"
 #include "utils.h"
 
-
-void onRx (void *noUsado);
+//#define DEBUG_MODE
 
 int main (void){
 
-	/* Inicializar la UART_USB junto con las interrupciones de Tx y Rx */
-	//Solo vamos a usar la de RX para no perdernos eventos
+	//Inicializamos la UART para imprimir en las distintas tareas del O.S
 	uartInit(UART_USB,115200);
-  // Seteo un callback al evento de recepcion y habilito su interrupcion
-  uartCallbackSet(UART_USB, UART_RECEIVE, onRx, NULL);
-  // Habilito todas las interrupciones de UART_USB
-  uartInterrupt(UART_USB, true);
+	uartWriteString(UART_USB,"ISO-MSE-2019:Final-Gonzalo Lavigna 28/04/2018 02:25 \r\n");
+	printf("Maximo Numero de Tareas permitidas por nuestro OS:%d\r\n",MAX_TASK_COUNT);
+	printf("Maximo Numero de Prioridades permitidas por nuestro OS: 3 HIGH-MEDIUM-LOW\r\n");
+	printf("Maximo Numero de Eventos permitidos por nuestro OS:%d\r\n",MAX_EVENT_COUNT);
+	printf("Maximo Numero de Mutex permitidos por nuestro OS:%d\r\n",MAX_MUTEX_COUNT);
+	printf("Maximo Numero de Colas OS permitidas por nuestro OS:%d\r\n",MAX_QUEUE_COUNT);
+	printf("TECLA 2 EDU CIAA EQUIVALE a B1 del examen\r\n");
+	printf("TECLA 4 EDU CIAA EQUIVALE a B2 del examen\r\n");
+	printf("Descomentar linea 19 del archivo main.c --> #define DEBUG_MODE para permitir la impresion de utilizacion de tareas cada 15 segundo aproximadamente\r\n");
+	printf("\r\n\r\n\r\n");
 
 
-  //Mensaje de bienvenida antes de arrancar
-	uartWriteString(UART_USB,"OS-ISO MSE 2019 Gonzalo Lavigna\r\n");
 
-
-  //Inicializamos el buffer circular de la uart
-  init_uart_circular_buffer();
-	/*No sabemos como arrancan todas las colas con lo cual las inicializamos a todas con algo con algo conocido*/
-	os_queue_init();
+	///TODO: Esta inicializacion es obligatoria, pero se debe ocular al usuario.
+	/*No sabemos como arrancan todas las colas de prioridades de tarea con lo cual las inicializamos a todas con algo con un valor inicial*/
+	os_priority_queue_init();
 	/*Todos los eventos no savemos como arrancan y para no tener conflicto los inicializamos con algo conocido*/
 	os_event_init_array();
 	/*Inicializamos todos los mutex para que arranquen todos en el mismo valor*/
 	os_mutex_init_array();
+	/*Inicializamos todas las colas de mensajes con vectores NULL y punteros a mutex y eventos nulos*/
+	os_queue_init_array();
 
 	//Creo el evento de la tecla antes de lanzar el OS --> si es NULL me quedo esperando
 	if((tecla_event = os_event_init()) == NULL){
-		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:TECLA\r\n");
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:TECLA EVENT\r\n");
 		while(1){
-			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
-			//debugger
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debuggger
+			__WFI();
+		}
+	}
+	//Para que pueda prender un led sin correlacion con el otro y por ejemplo permitir el encendido de un led
+	//con un delay de 1 segundo y otro de 100 ms. Estan desacoplados los eventos.
+	if((event_led_green = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:LED VERDE EVENT\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
+			__WFI();
+		}
+	}
+	if((event_led_red = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:LED ROJO EVENT\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
+			__WFI();
+		}
+	}
+	if((event_led_yellow = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:LED AMARILLO EVENT\r\n");
+		while(1){
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
 			__WFI();
 		}
 	}
 
-	if((tecla_1_event = os_event_init()) == NULL){
-		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:TECLA 1\r\n");
+	if((event_led_blue = os_event_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO EVENTO:LED AZUL\r\n");
 		while(1){
-			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
-			//debugger
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
 			__WFI();
 		}
 	}
-
-	if((uart_mutex = os_mutex_init()) == NULL){
-		uartWriteString(UART_USB,"ERROR CREANDO MUTEX:UART\r\n");
+	//Este mutex proteje el flujo de informacion entre la tarea que tiene la FSM de las teclas
+	//y las distintas tareas de los leds.
+	if((mutex_led = os_mutex_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO MUTEX PARA PROTEGER DATOS HACIA LOS LEDS\r\n");
 		while(1){
-			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
-			//debugger
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
 			__WFI();
 		}
 	}
-
-
-	if((uart_receive_event = os_event_init()) == NULL){
-		uartWriteString(UART_USB,"ERROR CREANDO EVENTO: RECEPION UART\r\n");
+	//Este mutex proteje los datos entre la tarea que realiza el debounce de las teclas y la FSM
+	//de las teclas.
+	if((mutex_tecla = os_mutex_init()) == NULL){
+		uartWriteString(UART_USB,"ERROR CREANDO MUTEX PARA PROTEGER DATOS DE LAS TECLAS\r\n");
 		while(1){
-			//Si falla directamente esta creación me quedo esperando forever para poder verlo en un
-			//debugger
+			//Si falla directamente esta creación me quedo esperando forever para poder verlo en el debugger
 			__WFI();
 		}
 	}
+	//Esta funcion esta embebida en task_debounce.c para simplificar la inicialización de una cola del OS
+	if(cola_teclas_init() == FALSE){
+		uartWriteString(UART_USB,"ERROR CREANDO COLA DE MENSAJES DEL OS\r\n");
+	}
 
-
-	/*Creación de las tarea que vamos a ejecutar, a la tarea task3 de la UART directamente
-	 * le damos baja prioridad para que no absorva a la otra*/
-	os_task_create(task1_stack,TASK1_STACK_SIZE_BYTES,task1,HIGH_PRIORITY		,(void*)0x11111111);
-	os_task_create(task2_stack,TASK2_STACK_SIZE_BYTES,task2,HIGH_PRIORITY		,(void*)0x22222222);
-	os_task_create(task3_stack,TASK3_STACK_SIZE_BYTES,task3,LOW_PRIORITY		,(void*)0x33333333);
-	os_task_create(task4_stack,TASK4_STACK_SIZE_BYTES,task4,HIGH_PRIORITY		,(void*)0x44444444);
-	os_task_create(task5_stack,TASK5_STACK_SIZE_BYTES,task5,LOW_PRIORITY  	,(void*)0x55555555);
-	os_task_create(task6_stack,TASK6_STACK_SIZE_BYTES,task6,MEDIUM_PRIORITY	,(void*)0x66666666);
+	//Son todas de alta prioridad menos la que realiza el print ya que puede durar muchos ticks, y si sucede algo quiero que
+	//la tarea del debounce o los leds lo hagan.
+	os_task_create(task_debounce_stack  	,TASK_DEBOUNCE_STACK_SIZE_BYTES 	,task_debounce   ,HIGH_PRIORITY		,(void*)0x11111111);
+	os_task_create(task_print_stack     	,TASK_PRINT_STACK_SIZE_BYTES    	,task_print      ,MEDIUM_PRIORITY	,(void*)0x22222222);
+	os_task_create(task_led_green_stack 	,TASK_LED_GREEN_STACK_SIZE_BYTES	,task_green      ,HIGH_PRIORITY  	,(void*)0x33333333);
+	os_task_create(task_led_red_stack   	,TASK_LED_RED_STACK_SIZE_BYTES  	,task_red        ,HIGH_PRIORITY  	,(void*)0x44444444);
+	os_task_create(task_led_yellow_stack  ,TASK_LED_YELLOW_STACK_SIZE_BYTES ,task_yellow     ,HIGH_PRIORITY  	,(void*)0x55555555);
+	os_task_create(task_led_blue_stack    ,TASK_LED_BLUE_STACK_SIZE_BYTES   ,task_blue       ,HIGH_PRIORITY  	,(void*)0x66666666);
 
 	/*Inicializamos el O.S*/
 	os_init();
 
-	/*Despues del primer cambio de contexto no volvemos mas aca y loopeamos entre las tareas*/
+	/*Despues del primer cambio de contexto no volvemos mas aca y hacemos distintas cosas con las correspondientes tareas*/
 	while(1){
 		__WFI();
 	}
@@ -98,18 +125,9 @@ int main (void){
 	return TRUE;
 }
 
-/*Tarea para atajar la interrupcion de recepcion de una uart y ponerlo en un buffer tipo SAPI**/
-void onRx (void *noUsado){
-	static char c;
-	c= uartRxRead(UART_USB);
-	//Mensaje de Debug
-	//	printf( "Recibimos <<%c>> por UART\r\n", c );
-	circularBufferWrite(&uart_buffer_sapi,&c);
-	os_event_set_from_irq(uart_receive_event);
-}
 
-/*Prendemos algun LED para indicar que estamos haciendo cambio a IDLE
- * Creo que menos luminosidad nos indicara que tanto tenemos ocupado el O.S*/
+
+//Esta tarea
 void* 	idle_task(void * arg){
 	uint32_t i;
 	static uint32_t task_context_switch_count[MAX_TASK_COUNT];
@@ -120,12 +138,14 @@ void* 	idle_task(void * arg){
 	static uint8_t   print_float_number[16];
 
 	task_count = os_get_task_count();
-	printf("Tareas Creadas:%d\r\n",task_count);
+	printf("IDLE TASK:Tareas Creadas:%d\r\n",task_count);
+	printf("IDLE TASK:Eventos Creadas por el usuario:%d\r\n",os_get_event_count());
+	printf("IDLE TASK:Mutexes Creados por el usuario:%d\r\n",os_get_mutex_count());
+	printf("IDLE TASK:Colas Creados por el usuario:%d\r\n",os_get_queue_count());
+	printf("\r\n\r\n\r\n");
 	while(1){
-
-		/*Cada vez que entramos al hook que nos da el OS hacemos un gpioToggle del LED 3*/
-		gpioToggle(LED3);
-		/*Obtengo los datos para printearlos con la tarea idle*/
+#ifdef DEBUG_MODE
+		//Obtengo los datos para printearlos con la tarea idle
 		idle_context_switch_count = os_get_idle_contex_given_counter();
 		os_context_switch_count = os_get_os_context_switch_counter();
 		for(i=0;i<task_count;i++){
@@ -140,10 +160,8 @@ void* 	idle_task(void * arg){
 		printf("IDLE CONTEXT GIVEN:%d PORCENTAJE:%s \r\n",idle_context_switch_count,print_float_number);
 		//Esperamos 1 segundo con una funcion bloqueante que no hace uso del Sistick
 		delayInaccurateMs(10000);
+#endif
 		__WFI();
 	}
 }
-
-
-
 

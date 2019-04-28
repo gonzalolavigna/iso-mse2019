@@ -24,9 +24,7 @@ typedef enum {
 	EVENT_SET ,
 } event_state_t;
 
-//La idea es utilizarlo por ejemplo para compartir una UART
-//entre 2 tareas solamente, para hacerlo con mas deberiamos
-//pensar en otra estructura
+//Definicion de los mutex
 typedef enum {
 	//Significa que esta lockeando una sección
 	MUTEX_LOCK = 0,
@@ -36,14 +34,16 @@ typedef enum {
 
 
 /*Un evento tiene un estado y a la tarea que es trabando*/
+///TODO:En un principio se implemento asi, pero ahora ya no se usa esta criterio.
+///queda por legada, probar eliminar el campo task_waiting
 typedef struct {
 	event_state_t 	state;
 	uint32_t 				task_waiting;
 } event_t;
 
 typedef struct {
-	//Puntero al cual apunta y sirve para hacer el cambio de la tareas
-	//Tambien de esta manera no repetimos codigo
+	//Un mutex necesita un evento, y obviamente un estado del mutex para saber cuando dar
+	//acceso a una seccion critica y cuando no.
 	os_event_handler_t			event;
 	mutex_state_t 					mutex_state;
 } mutex_t;
@@ -67,6 +67,10 @@ os_mutex_handler_t  os_mutex_init	(void);
 //Esta funcion es para hacer un lock de una seccion critira
 bool_t 							os_mutex_lock 	(os_mutex_handler_t mutex);
 bool_t 							os_mutex_unlock (os_mutex_handler_t mutex);
+//Funciones para ser llamadas de una isr, esto puede suceder con una ISR de misma prioridad que la PENDSV
+//o si el sistick nos interrumpe, lo importante es que el unlock no hace un rescheduling con la pendsv.
+bool_t 							os_mutex_lock_from_isr 	(os_mutex_handler_t mutex);
+bool_t 							os_mutex_unlock_from_isr (os_mutex_handler_t mutex);
 
 
 

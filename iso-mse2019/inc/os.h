@@ -10,9 +10,11 @@
 //Numero maximo de las tareas permitidas por nuestro OS
 #define MAX_TASK_COUNT 10
 //Numero maximo de los eventos permitidas por nuestro OS
-#define MAX_EVENT_COUNT 10
+#define MAX_EVENT_COUNT 15
 //Numero maximo de los mutex que permite  nuestro OS
-#define MAX_MUTEX_COUNT 5
+#define MAX_MUTEX_COUNT 10
+//Numero maximo de llas colas que permite nuestro OS
+#define MAX_QUEUE_COUNT 10
 
 /*==================[c++]====================================================*/
 #ifdef __cplusplus
@@ -77,7 +79,7 @@ bool_t 	os_task_create	(	uint32_t stack[],
 													void * arg );
 /*Por cuestiones constructivas las colas de prioridades hay que construirlas antes de usar
  * el SO, esto podria hacerswe en OS_INIT TODO:Pasarlos OS_INIT */
-bool_t 	os_queue_init		(	void);
+bool_t 	os_priority_queue_init		(	void);
 /*Esta funcion es equivalente a un YIELD y la idea es con esta activar la pendsv y forzar
  * un scheduling y posterior cambio de contexto*/
 void 		do_scheduler		(	void);
@@ -111,6 +113,10 @@ void os_put_task_to_ready(uint32_t task_index);
 /*Tarea para poner a dormir si lo que realiza es un evento*/
 void os_put_current_task_to_sleep_event ( os_event_handler_t event);
 void os_put_tasks_to_ready_from_event 	(os_event_handler_t event);
+
+//Tarea para ser utilizadas en un visualizador para ver los eventos y mutex usados por el usuario.
+uint32_t os_get_event_count(void);
+uint32_t os_get_mutex_count(void);
 
 /*==================[declaracion datos a utilizarse externamente=============*/
 /*Esta es la lista de todas las tareas, claramente la necesitamos para pasar tareas

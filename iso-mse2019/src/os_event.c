@@ -113,9 +113,9 @@ bool_t os_event_set	(os_event_handler_t event){
 
 bool_t os_event_set_from_irq(os_event_handler_t event){
 	bool_t rv;
-	//Ponemos el event
+	//Ponemos solamente el evento
 	rv=os_event_set(event);
-	//Lanzamos una nueva reconfiguracion;
+	//Lanzamos una nueva reconfiguracion, para que el OS decida de vuelta que hacer.
 	do_scheduler();
 	return rv;
 }
@@ -155,7 +155,8 @@ os_mutex_handler_t os_mutex_init(void){
 
 }
 
-
+//La primera tarea que pasa por aca toma la llave y todas las otras que hagan un lock
+//van a quedar trabadas hasta que se termine de ejecutar.
 bool_t	os_mutex_lock 	(os_mutex_handler_t mutex){
 	mutex_t* local_mutex= (mutex_t*)mutex;
 	switch(local_mutex->mutex_state){
@@ -176,7 +177,7 @@ bool_t	os_mutex_lock 	(os_mutex_handler_t mutex){
 	return TRUE;
 }
 
-
+//Cuando la tarea que trabo devuelve el mutex todas las tareas trabadas van a ser despertadas.
 bool_t os_mutex_unlock (os_mutex_handler_t mutex){
 	mutex_t* local_mutex= (mutex_t*)mutex;
 	switch(local_mutex->mutex_state){
@@ -199,5 +200,64 @@ bool_t os_mutex_unlock (os_mutex_handler_t mutex){
 	return TRUE;
 }
 
+//El lock from ISR no traba la IRQ eso seria desastroso, pero devuelve un false si no pudo
+//tomar la llave lo que si va a trabar cualquier tarea del OS que quiera pasar por la
+//seccion critica.
+bool_t os_mutex_lock_from_isr (os_mutex_handler_t mutex){
+	//Desde una isr solamente pongo el mutex en lock no se puede trabar una IRQ
+	mutex_t* local_mutex= (mutex_t*)mutex;
+	bool_t 	 rv = FALSE;
 
+	switch(local_mutex->mutex_state){
+	//Si esta trabado no podemos parar o sea que devolvemos un false
+	case MUTEX_LOCK:
+		rv = FALSE;
+		break;
+	case MUTEX_UNLOCK:
+		//Cualquier cosa que quiera entrar se va a terminar trabando
+		local_mutex->mutex_state = MUTEX_LOCK;
+		rv = TRUE;
+		break;
+	default:
+		rv = FALSE;
+		break;
+	}
+	return rv;
+}
+
+//Desde una ISR cuando pasa por el evento de unlock va a directmaente a destrabar
+//todas las que esten trabadas, sino hay nada que destrabar la funcion event set
+//no va alterar nada.
+bool_t os_mutex_unlock_from_isr (os_mutex_handler_t mutex){
+	//Desde una isr solamente pongo el mutex en lock no se puede trabar una IRQ
+	mutex_t* local_mutex= (mutex_t*)mutex;
+	bool_t 	 rv = FALSE;
+
+	switch(local_mutex->mutex_state){
+	//Si esta trabado no podemos parar o sea que devolvemos un false
+	case MUTEX_LOCK:
+		//Si esta un un lock mando el evento al OS para que destrabe cuualquier cosa
+		os_event_set_from_irq(local_mutex->event);
+		local_mutex->mutex_state = MUTEX_UNLOCK;
+		rv = TRUE;
+		break;
+	case MUTEX_UNLOCK:
+		//Si esta unlock y hago un un unlock no aporta nada
+		rv = TRUE;
+		break;
+	default:
+		rv = FALSE;
+		break;
+	}
+	return rv;
+}
+
+
+//Tarea para ser utilizadas en un visualizador para ver los eventos y mutex usados por el usuario.
+uint32_t os_get_event_count(void){
+	return event_count;
+}
+uint32_t os_get_mutex_count(void){
+	return mutex_count;
+}
 

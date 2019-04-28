@@ -8,9 +8,9 @@
 extern "C" {
 #endif
 
-
-
-//Mismo numero del stack size
+//Mismo numero que la cantidad de tarea, podria dismunuirse para encotrar un optimo.
+///TODO:Despues de haber pasado por muchas cosa es preferible hacer una lista enlazada. Quedara para una proxima implementacion.
+//Lo bueno que de esta manera es relativamente rapido hacer el round robin.
 #define STACK_SIZE 10
 
 typedef struct {

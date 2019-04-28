@@ -55,7 +55,7 @@ void update_delay(void) {
 			break;
 		case TASK_SLEEPING:
 				//Si estoy esperando un evento no hago el trabajo de bajar el contador
-				//Si queremos implementar un timeout para los eventos directamente tenemos que cambiar el enfoque
+				//Si queremos implementar un timeout para los eventos directamente tenemos que cambiar las condiciones aqui.
 				if(task_list[i].event_waiting == FALSE){
 					if ((--(task_list[i].reamaining_ticks)) == 0) {
 						//Ponemos la tarea en ready para poder despertarla cuando correspoda
