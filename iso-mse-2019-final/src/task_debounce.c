@@ -95,7 +95,7 @@ void* task_debounce (void* a){
 			os_event_set(tecla_event);
 		}
 		//Esto lo ponemos en el delay con 10 ms para hacer el .
-		os_task_delay(10);
+		os_task_delay(1);
 	}
 }
 
