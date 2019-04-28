@@ -131,6 +131,7 @@ bool_t edge_dector_fsm (void){
 		//Si estoy aca significa que pulsaron la tecla 2 y si hay un flanco ascendente ya no hay nada que medir
 		if(tecla_array_copy[TECLA_2_INDEX].tecla_rising_event == TRUE){
 			edge_measure_data.state = WAIT_FIRST_FALLING_EDGE;
+			printf("SECUENCIA INVALIDO\r\n");
 		}	else if(tecla_array_copy[TECLA_1_INDEX].tecla_falling_event == TRUE){
 			edge_measure_data.falling_edge_tick_tec_1 = tecla_array_copy[TECLA_1_INDEX].tecla_falling_tick;
 			//Este el time_1 que ya lo medi
@@ -145,6 +146,7 @@ bool_t edge_dector_fsm (void){
 		//Si estoy aca significa que pulsaron la tecla 1 y si hay un flanco ascendente ya no hay nada que medir
 		if(tecla_array_copy[TECLA_1_INDEX].tecla_rising_event == TRUE){
 			edge_measure_data.state = WAIT_FIRST_FALLING_EDGE;
+			printf("SECUENCIA INVALIDO\r\n");
 		}	else if(tecla_array_copy[TECLA_2_INDEX].tecla_falling_event == TRUE){
 			edge_measure_data.falling_edge_tick_tec_2 = tecla_array_copy[TECLA_2_INDEX].tecla_falling_tick;
 			//Este el time_1 que ya lo medi
@@ -159,6 +161,7 @@ bool_t edge_dector_fsm (void){
 		//Estamos esperando un ascendente esto no deberia suceder
 		if((tecla_array_copy[TECLA_1_INDEX].tecla_falling_event == TRUE) || (tecla_array_copy[TECLA_2_INDEX].tecla_falling_event == TRUE) ){
 			edge_measure_data.state = WAIT_FIRST_FALLING_EDGE;
+			printf("SECUENCIA INVALIDO\r\n");
 		//Esto significa que cayeron los en el mismo tick lo cual los detecto como un evento
 		} else if((tecla_array_copy[TECLA_1_INDEX].tecla_rising_event == TRUE) && (tecla_array_copy[TECLA_2_INDEX].tecla_rising_event == TRUE)){
 			edge_measure_data.rising_edge_tick_tec_1  = tecla_array_copy[TECLA_1_INDEX].tecla_rising_tick;
@@ -185,6 +188,7 @@ bool_t edge_dector_fsm (void){
 		//Aca se pueden usar otros criterios
 		if(tecla_array_copy[TECLA_2_INDEX].tecla_falling_event == TRUE){
 			edge_measure_data.state = WAIT_FIRST_FALLING_EDGE;
+			printf("SECUENCIA INVALIDO\r\n");
 		}	else if(tecla_array_copy[TECLA_1_INDEX].tecla_rising_event== TRUE){
 			edge_measure_data.rising_edge_tick_tec_1 = tecla_array_copy[TECLA_1_INDEX].tecla_rising_tick;
 			//Este el time_1 que ya lo medi
@@ -203,6 +207,7 @@ bool_t edge_dector_fsm (void){
 		//Aca se pueden usar otros criterios
 		if(tecla_array_copy[TECLA_1_INDEX].tecla_falling_event == TRUE){
 			edge_measure_data.state = WAIT_FIRST_FALLING_EDGE;
+			printf("SECUENCIA INVALIDO\r\n");
 		}	else if(tecla_array_copy[TECLA_2_INDEX].tecla_rising_event== TRUE){
 			edge_measure_data.rising_edge_tick_tec_2 = tecla_array_copy[TECLA_2_INDEX].tecla_rising_tick;
 			//Este el time_1 que ya lo medi
