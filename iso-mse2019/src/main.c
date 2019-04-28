@@ -20,13 +20,13 @@ int main (void){
 
 	//Inicializamos la UART para imprimir en las distintas tareas del O.S
 	uartInit(UART_USB,115200);
-	uartWriteString(UART_USB,"ISO-MSE-2019:Final-Gonzalo Lavigna 28/04/2018 02:25 \r\n");
+	uartWriteString(UART_USB,"ISO-MSE-2019:Final-Gonzalo Lavigna 28/04/2018 03:04 \r\n");
 	printf("Maximo Numero de Tareas permitidas por nuestro OS:%d\r\n",MAX_TASK_COUNT);
 	printf("Maximo Numero de Prioridades permitidas por nuestro OS: 3 HIGH-MEDIUM-LOW\r\n");
 	printf("Maximo Numero de Eventos permitidos por nuestro OS:%d\r\n",MAX_EVENT_COUNT);
 	printf("Maximo Numero de Mutex permitidos por nuestro OS:%d\r\n",MAX_MUTEX_COUNT);
 	printf("Maximo Numero de Colas OS permitidas por nuestro OS:%d\r\n",MAX_QUEUE_COUNT);
-	printf("TECLA 2 EDU CIAA EQUIVALE a B1 del examen\r\n");
+	printf("TECLA 1 EDU CIAA EQUIVALE a B1 del examen\r\n");
 	printf("TECLA 4 EDU CIAA EQUIVALE a B2 del examen\r\n");
 	printf("Descomentar linea 19 del archivo main.c --> #define DEBUG_MODE para permitir la impresion de utilizacion de tareas cada 15 segundo aproximadamente\r\n");
 	printf("\r\n\r\n\r\n");

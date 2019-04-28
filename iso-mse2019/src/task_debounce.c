@@ -24,8 +24,8 @@ void 	debounce_init				(void);
 
 
 
-//Uso las teclas 2 y las teclas 4 ya que las adyacende como TEC 1 y TEC 2 no puedo por los tamaño de mis dedos
-gpioMap_t teclas[] = {TEC2,TEC4};
+//Uso las teclas 1 y las teclas 4 ya que las adyacende como TEC 1 y TEC 2 no puedo por los tamaño de mis dedos
+gpioMap_t teclas[] = {TEC1,TEC4};
 #define TECLAS_VALIDAS sizeof(teclas)/sizeof(gpioMap_t)
 debounce_data_t tecla_array[TECLAS_VALIDAS];
 
@@ -158,15 +158,15 @@ void* task_debounce_hook (void* p){
 //Inicializamos las interrupciones de las teclas.
 void init_irq_gpio(void){
 	//En el canal de interrupcion 0
-	//Flanco Descendente TEC 2
-	Chip_SCU_GPIOIntPinSel(0,0,8);
+	//Flanco Descendente TEC 1
+	Chip_SCU_GPIOIntPinSel(0,0,4);
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT,PININTCH(0));
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT,PININTCH(0));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT,PININTCH(0));
 
 	//En el canal de interrupcion 1
-	//Flanco Ascendente TEC 2
-	Chip_SCU_GPIOIntPinSel(1,0,8);
+	//Flanco Ascendente TEC 1
+	Chip_SCU_GPIOIntPinSel(1,0,4);
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT,PININTCH(1));
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT,PININTCH(1));
 	Chip_PININT_EnableIntHigh(LPC_GPIO_PIN_INT,PININTCH(1));
